@@ -473,11 +473,11 @@ dancevis.Dancer = function(dancerOptions) {
 
 	this.dancerId = dancevis.Dancer.__idUnique();
 	//this.parent = 
-	this.element = d3.select("svg").append("svg:circle")
+	this.element = d3.select("g").append("svg:circle")
 	         		.attr("r", 2)
 	         		.attr("fill", this.dancerColor)
 	         		.attr("stroke", this.dancerColor)
-		    		.attr("transform", "translate("+ (w/2) +"," + (h/2) + ")");
+		    		.attr("transform", "translate("+ 0 +"," + 0 + ")");
 
 	//don't have dancerId, parent, element
 
