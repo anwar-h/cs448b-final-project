@@ -423,36 +423,84 @@ dancevis.DancerTypeId = {
 }
 
 //*** class DancerShape
-dancevis.DancerShape = {
+dancevis.DancerShape = {//need to make this correspond to svg shapes
 	SQUARE: dancevis.Util.__enumUnique(),
 	CIRCLE: dancevis.Util.__enumUnique(),
 	TRIANGLE: dancevis.Util.__enumUnique()
 }
 
 //*** class DancerShapeSize
-dancevis.DancerShapeSize = {
+dancevis.DancerShapeSize = {//need to make this correspond to actual pixel sizes
 	SMALL: dancevis.Util.__enumUnique(),
 	MEDIUM: dancevis.Util.__enumUnique(),
 	LARGE: dancevis.Util.__enumUnique()
 }
 
 
+
 //*** Class Dancer
 dancevis.Dancer = function(dancerOptions) {
+	this.dancerId = null;
+	this.dancerTypeId = null;
+	this.dancerShape = null;
+	this.dancerSize = null;
+	this.dancerName = null;
+	this.parent = null;
+	this.dancerColor = null;
+	this.position = null;
+	this.orientation = null;
+	this.element = null;
+
+	var defaultOptions = {
+		dancerShape: dancevis.DancerShape.CIRCLE,
+		dancerSize: dancevis.DancerShapeSize.SMALL,
+		dancerColor: "black",
+		position: new dancevis.Position(0,0),
+		orientation: new dancevis.Orientation(0)
+	}
+
+	if(dancerOptions === undefined){
+		dancerOptions = defaultOptions;
+	}
+
+	this.dancerTypeId = dancevis.Util.defaultTo(dancerOptions.dancerTypeId, dancevis.DancerTypeId.FOLLOW);
+	this.dancerShape = dancerOptions.dancerShape;
+	this.dancerSize = dancerOptions.dancerSize;
+	this.dancerName = dancerOptions.dancerName;
+	this.dancerColor = dancerOptions.dancerColor; 
+	this.position = dancerOptions.position;
+	this.orientation = dancerOptions.orientation;
+
+	this.dancerId = dancevis.Dancer.__idUnique();
+	//this.parent = 
+	this.element = d3.select("svg").append("svg:circle")
+	         		.attr("r", 2)
+	         		.attr("fill", this.dancerColor)
+	         		.attr("stroke", this.dancerColor)
+		    		.attr("transform", "translate("+ (w/2) +"," + (h/2) + ")");
+
+	//don't have dancerId, parent, element
 
 }
+//Static Methods for class Dancer
+dancevis.Dancer.__idUnique = (function() {
+	var counter = 555;
+	return function() {
+		return (counter += 1);
+	}
+})();
 // Methods for class Dancer
 dancevis.Dancer.prototype.position = function() {
-
+	return this.position;
 }
 dancevis.Dancer.prototype.orientation = function() {
-
+	return this.orientation;
 }
 dancevis.Dancer.prototype.updateChildrenBasedOnMyShape = function(currentTime) {
-
+	//do nothing
 }
 dancevis.Dancer.prototype.setMyPositionAndModifyChildren = function(position) {
-
+	this.position = position;
 }
 
 //console.log("enumUnique=" + dancevis.Util.__enumUnique());
