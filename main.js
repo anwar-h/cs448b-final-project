@@ -473,12 +473,42 @@ dancevis.Dancer = function(dancerOptions) {
 
 	this.dancerId = dancevis.Dancer.__idUnique();
 	//this.parent = 
-	this.element = d3.select("g").append("svg:circle")
-	         		.attr("r", 2)
-	         		.attr("fill", this.dancerColor)
-	         		.attr("stroke", this.dancerColor)
-		    		.attr("transform", "translate("+ 0 +"," + 0 + ")");
 
+
+	if (this.dancerShape == dancevis.DancerShape.CIRCLE){
+		this.element = d3.select("g").append("svg:circle")
+						.attr("r", 2)
+						.attr("cx", this.position.x)
+						.attr("cy", this.position.y)
+						.attr("fill", this.dancerColor)
+						.attr("stroke", this.dancerColor)
+						//.attr("transform", "translate("+ this.position.x +"," + this.position.y + ")");
+	}
+	if (this.dancerShape == dancevis.DancerShape.SQUARE){
+		this.element = d3.select("g").append("svg:rect")
+						.attr("width", 2)
+						.attr("height", 2)
+						.attr("x", this.position.x)
+						.attr("y", this.position.y)
+						.attr("fill", this.dancerColor)
+						.attr("stroke", this.dancerColor)
+						//.attr("transform", "translate("+ this.position.x +"," + this.position.y + ")");
+	}
+	if (this.dancerShape == dancevis.DancerShape.TRIANGLE){
+		var top = new dancevis.Position(this.position.x, this.position.y + 2);
+		var left = new dancevis.Position(this.position.x - 2, this.position.y - 1);
+		var right = new dancevis.Position(this.position.x + 2, this.position.y - 1);
+		top = top.toString().replace("(", "").replace(")", "");
+		left = left.toString().replace("(", "").replace(")", "");
+		right = right.toString().replace("(", "").replace(")", "");
+		var points = top + " " + left + " " + right;
+		console.log(points);
+		this.element = d3.select("g").append("svg:polygon")
+						.attr("points", points)
+						.attr("fill", this.dancerColor)
+						.attr("stroke", this.dancerColor)
+						.attr("transform", "translate("+ this.position.x +"," + this.position.y + ")");
+	}
 	//don't have dancerId, parent, element
 
 }
