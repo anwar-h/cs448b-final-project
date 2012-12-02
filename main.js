@@ -39,7 +39,7 @@ dancevis.Error.log = function(err) {
 dancevis.Error.DanceVisError = function(message) {
 	var defaultMessage = "'An error has occured inside dancevis library'";
 	this.name = "DanceVisError";
-	this.message = "'"+message+"'" || defaultMessage;
+	this.message = "function "+arguments.callee.caller.name+"(): '"+message+"'" || defaultMessage;
 }
 dancevis.Error.DanceVisError.prototype = new Error();
 dancevis.Error.DanceVisError.prototype.constructor = dancevis.Error.DanceVisError;
@@ -47,55 +47,97 @@ dancevis.Error.DanceVisError.prototype.constructor = dancevis.Error.DanceVisErro
 
 //*** class Position
 dancevis.Position = function(x, y) {
-
+	this.x = null;
+	this.y = null;
+	if (!dancevis.Util.isNum(x) || !dancevis.Util.isNum(y)) {
+		throw new dancevis.Error.DanceVisError("x, y for Position must be numeric values");
+	}
+	this.x = dancevis.Util.defaultTo(x, 0);
+	this.y = dancevis.Util.defaultTo(y, 0);
 }
+// Static Variables for class Position
+dancevis.Position.screenOriginLeft = 0;
+dancevis.Position.screenOriginTop = 0;
 // Static Methods for class Position
 dancevis.Position.screenOriginIs = function(left, top) {
-
+	if (!dancevis.Util.isNum(left) || !dancevis.Util.isNum(top)) {
+		throw new dancevis.Error.DanceVisError("screen origin must be numeric values");
+	}
+	if (left < 0 || top < 0) {
+		throw new dancevis.Error.DanceVisError("screen origin must be >= 0");
+	}
+	if (left > document.body.offsetWidth || top > document.body.offsetHeight) {
+		throw new dancevis.Error.DanceVisError("screen origin must be less than document.body width and height");
+	}
+	dancevis.Position.screenOriginLeft = left;
+	dancevis.Position.screenOriginTop = top;
 }
 // Methods for class Position
 dancevis.Position.prototype.distance = function(other) {
-
+	return Math.sqrt(Math.pow(other.x - this.x, 2) + Math.pow(other.y - this.y, 2));
 }
 dancevis.Position.prototype.equals = function(other) {
-
+	return (other.x == this.x && other.y == this.y);
 }
 dancevis.Position.prototype.screenCoords = function() {
-
+	var screenX = dancevis.Position.screenOriginLeft + this.x;
+	var screenY = dancevis.Position.screenOriginTop - this.y;
+	return new dancevis.Position(screenX, screenY);
 }
 dancevis.Position.prototype.toString = function() {
-
+	var numDecimal = 2;
+	var xStr = this.x.toFixed(numDecimal);
+	var yStr = this.y.toFixed(numDecimal);
+	return "("+xStr+", "+yStr+")";
 }
 
 //*** class Orientation
 dancevis.Orientation = function(angle, isRadians) {
+	this.angle = null;
+	if (!dancevis.Util.isNum(angle)) {
+		throw new dancevis.Error.DanceVisError("an angle must be a numeric value");
+	}
 
+	var theta = dancevis.Util.defaultTo(angle, 0);
+
+	if (isRadians != undefined && typeof isRadians == "boolean") {
+		if (!isRadians) theta = dancevis.Orientation.degreesToRadians(theta);
+	}
+	this.angle = theta;
 }
 // Static Methods for class Orientation
 dancevis.Orientation.radiansToDegrees = function(radians) {
-
+	return radians * 360.0 / (2 * Math.PI);
 }
 dancevis.Orientation.degreesToRadians = function(degrees) {
-
+	return degrees * 2 * Math.PI / 360.0;
 }
 // Methods for class Orientation
-dancevis.Orientation.prototype.angle = function(inRadians) {
-
+dancevis.Orientation.prototype.radians = function() {
+	return this.angle;
+}
+dancevis.Orientation.prototype.degrees = function() {
+	return dancevis.Orientation.radiansToDegrees(this.angle);
 }
 dancevis.Orientation.prototype.equals = function(other) {
-
+	return (other.angle == this.angle);
 }
 dancevis.Orientation.prototype.cos = function() {
-
+	return Math.cos(this.angle);
 }
 dancevis.Orientation.prototype.sin = function() {
-
+	return Math.sin(this.angle);
 }
 dancevis.Orientation.prototype.angleBetween = function(other) {
-
+	var diff1 = other.angle - this.angle;
+	var diff2 = this.angle - other.angle;
+	return diff1 > diff2 ? new dancevis.Orientation(diff2) : new dancevis.Orientation(diff1);
 }
 dancevis.Orientation.prototype.toString = function() {
-
+	var numDecimal = 2;
+	var rad = this.radians().toFixed(numDecimal);
+	var dec = this.degrees().toFixed(numDecimal);
+	return ("("+rad + " radians, " + dec + " degrees)");
 }
 
 //*** class Time
@@ -534,6 +576,13 @@ dancevis.Dancer.prototype.setMyPositionAndModifyChildren = function(position) {
 }
 
 //console.log("enumUnique=" + dancevis.Util.__enumUnique());
+
+
+
+
+
+
+
 
 
 
