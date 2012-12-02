@@ -537,13 +537,10 @@ dancevis.Dancer = function(dancerOptions) {
 						//.attr("transform", "translate("+ this.position.x +"," + this.position.y + ")");
 	}
 	if (this.dancerShape == dancevis.DancerShape.TRIANGLE){
-		var top = new dancevis.Position(this.position.x, this.position.y + 2);
-		var left = new dancevis.Position(this.position.x - 2, this.position.y - 1);
-		var right = new dancevis.Position(this.position.x + 2, this.position.y - 1);
-		top = top.toString().replace("(", "").replace(")", "");
-		left = left.toString().replace("(", "").replace(")", "");
-		right = right.toString().replace("(", "").replace(")", "");
-		var points = top + " " + left + " " + right;
+		var top = new dancevis.Position(this.position.x, this.position.y - 20);
+		var left = new dancevis.Position(this.position.x - 20, this.position.y + 10);
+		var right = new dancevis.Position(this.position.x + 20, this.position.y + 10);
+		var points = (top + " " + left + " " + right).replace(/\(/g, "").replace(/\)/g, "");
 		console.log(points);
 		this.element = d3.select("g").append("svg:polygon")
 						.attr("points", points)
