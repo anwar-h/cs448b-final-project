@@ -210,26 +210,28 @@ dancevis.Shapes.GeometricShape.prototype.boundingBox = function() {
 
 //*** class Shapes.Line
 dancevis.Shapes.Line = function(startPosition, length, angle) {
-
+    this.startPosition = startPosition;
+	this.length = length;
+	this.angle = angle;
 }
 // Methods for class Shapes.Line
 dancevis.Shapes.Line.prototype.startPosition = function() {
-
+    return startPosition;
 }
 dancevis.Shapes.Line.prototype.endPosition = function() {
-
+   return endPosition;
 }
 dancevis.Shapes.Line.prototype.nextPosition = function(startPosition, dt, speed) {
-
+   return startPosition + (speed*dt);
 }
 dancevis.Shapes.Line.prototype.length = function() {
-
+   return length;
 }
 dancevis.Shapes.Line.prototype.angle = function() {
-
+   return angle;
 }
 dancevis.Shapes.Line.prototype.distanceToLine = function() {
-
+    
 }
 dancevis.Shapes.Line.prototype.isOnShape = function(position) {
 
