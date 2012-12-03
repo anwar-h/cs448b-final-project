@@ -624,6 +624,7 @@ dancevis.Group = function(groupOptions) {
 	this.startTime = null;
 	this.endTime = null;
 	this.lastTime = null;
+	this.position = null;
 
 	groupOptions = dancevis.Util.defaultTo(groupOptions, {});
 	if (!groupOptions.shape ||
@@ -636,6 +637,7 @@ dancevis.Group = function(groupOptions) {
 	this.shape = groupOptions.shape;
 	this.startTime = groupOptions.startTime;
 	this.endTime = groupOptions.endTime;
+	this.position = dancevis.Util.defaultTo(groupOptions.position, new dancevis.Position(0,0));
 }
 // Static Variables for class Group
 dancevis.Group.__type = "group";
@@ -644,12 +646,16 @@ dancevis.Group.prototype.updateChildrenBasedOnMyShape = function(currentTime) {
 	if (currentTime.__type != dancevis.Time.__type) {
 		throw new dancevis.Error.DanceVisError("currentTime is not of type time");
 	}
-	var timeDiff = new dancevis.Time({milliseconds:(currentTime.inMilliseconds - this.lastTime.inMilliseconds)});
+	var dt = new dancevis.Time({milliseconds:(currentTime.inMilliseconds - this.lastTime.inMilliseconds)});
 	for (var i = 0; i < this.children.length; i++) {
 		var child = this.children[i];
-		// update my children based on my shape
-		child.setMyPositionAndModifyChildren();
+		// calculate new child position based on shape
+		var newPosition = this.shape.nextPosition(child.position, dt, speed);
+		// set child position to the new one
+		child.setMyPositionAndModifyChildren(newPosition);
 	}
+
+	// let all children update themselves
 	for (var i = 0; i < this.children.length; i++) {
 		var child = this.children[i];
 		child.updateChildrenBasedOnMyShape(currentTime);
@@ -657,7 +663,10 @@ dancevis.Group.prototype.updateChildrenBasedOnMyShape = function(currentTime) {
 	this.lastTime = currentTime;
 }
 dancevis.Group.prototype.setMyPositionAndModifyChildren = function(position) {
-
+	if (position.__type != dancevis.Position.__type) {
+		throw new dancevis.Error.DanceVisError("this is not a position");
+	}
+	this.position = position;
 }
 dancevis.Group.prototype.forwardChild = function(child, toGroup) {
 
