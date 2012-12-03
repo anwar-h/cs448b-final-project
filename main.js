@@ -14,13 +14,24 @@ dancevis.Error = {}
 
 
 /***************** Implementation *****************/
-dancevis.Util.defaultTo = function(value, defaultToThisValue){
-	if (value == undefined)
+dancevis.Util.defaultTo = function(value, defaultToThisValue) {
+	if (value === undefined || value === null)
 		return defaultToThisValue;
 	return value;
 }
 dancevis.Util.isNum = function(value) {
 	return (typeof(value) == 'number' && !isNaN(value));
+}
+dancevis.Util.defaultNum = function(value, defaultNumValue) {
+	if (!dancevis.Util.isNum(defaultNumValue)) {
+		throw new dancevis.Error.DanceVisError("default value for a numeric type must be a numeric type");
+	}
+	var num = dancevis.Util.defaultTo(value, defaultNumValue);
+	// this must be a number
+	if (!dancevis.Util.isNum(num)) {
+		num = defaultNumValue;
+	}
+	return num;
 }
 
 dancevis.Util.__enumUnique = (function() {
@@ -88,7 +99,7 @@ dancevis.Position.prototype.toString = function() {
 	var numDecimal = 2;
 	var xStr = this.x.toFixed(numDecimal);
 	var yStr = this.y.toFixed(numDecimal);
-	return "("+xStr+", "+yStr+")";
+	return "("+xStr+","+yStr+")";
 }
 
 //*** class Orientation
@@ -113,10 +124,10 @@ dancevis.Orientation.degreesToRadians = function(degrees) {
 	return degrees * 2 * Math.PI / 360.0;
 }
 // Methods for class Orientation
-dancevis.Orientation.prototype.radians = function() {
+dancevis.Orientation.prototype.inRadians = function() {
 	return this.angle;
 }
-dancevis.Orientation.prototype.degrees = function() {
+dancevis.Orientation.prototype.inDegrees = function() {
 	return dancevis.Orientation.radiansToDegrees(this.angle);
 }
 dancevis.Orientation.prototype.equals = function(other) {
@@ -142,51 +153,93 @@ dancevis.Orientation.prototype.toString = function() {
 
 //*** class Time
 dancevis.Time = function(timeSet) {
+	this.milliseconds = null;
 
+	timeSet = dancevis.Util.defaultTo(timeSet, {});
+	timeSet.milliseconds = dancevis.Util.defaultNum(timeSet.milliseconds, 0);
+	timeSet.seconds = dancevis.Util.defaultNum(timeSet.seconds, 0);
+	timeSet.minutes = dancevis.Util.defaultNum(timeSet.minutes, 0);
+	timeSet.hours = dancevis.Util.defaultNum(timeSet.hours, 0);
+
+	var totalMilliseconds =
+		timeSet.milliseconds +
+		(timeSet.seconds * 1000.0) +
+		(timeSet.minutes * 1000.0 * 60.0) +
+		(timeSet.hours * 1000.0 * 60.0 * 60.0);
+
+	this.milliseconds = totalMilliseconds;
 }
+// Static Variables for class Time
+dancevis.Time.zeroTime = null;
 // Static Methods for class Time
 dancevis.Time.zeroTimeIsNow = function() {
-
+	dancevis.Time.zeroTime = new Date();
 }
 dancevis.Time.now = function() {
-
+	var nowTime = new Date();
+	var zero = dancevis.Util.defaultTo(dancevis.Time.zeroTime, nowTime);
+	var diff = nowTime.getTime() - zero.getTime();
+	return new dancevis.Time({milliseconds:diff});
 }
 // Methods for class Time
-dancevis.Time.prototype.milliseconds = function() {
-
+dancevis.Time.prototype.inMilliseconds = function() {
+	return this.milliseconds;
 }
-dancevis.Time.prototype.seconds = function() {
-
+dancevis.Time.prototype.inSeconds = function() {
+	return this.milliseconds / 1000.0;
 }
-dancevis.Time.prototype.minutes = function() {
-
+dancevis.Time.prototype.inMinutes = function() {
+	return this.milliseconds / (1000.0 * 60.0);
 }
-dancevis.Time.prototype.hours = function() {
-
+dancevis.Time.prototype.inHours = function() {
+	return this.milliseconds / (1000.0 * 60.0 * 60.0);
 }
 dancevis.Time.prototype.equals = function(other) {
-
+	return (other.milliseconds == this.milliseconds);
 }
 dancevis.Time.prototype.toString = function() {
-
+	var numDecimal = 2;
+	var seconds = this.inSeconds().toFixed(numDecimal);
+	return "("+seconds+" seconds)";
 }
 
 //*** class Speed
 dancevis.Speed = function(speedSet) {
+	this.pixelsPerMillisecond = null;
 
+	this.setSpeed(speedSet);
 }
 // Methods for class Speed
 dancevis.Speed.prototype.speed = function() {
-
+	return this.pixelsPerMillisecond;
 }
-dancevis.Speed.prototype.speedSet = function(speedSet) {
+dancevis.Speed.prototype.setSpeed = function(speedSet) {
+	speedSet = dancevis.Util.defaultTo(speedSet, {});
 
+	// prevent divide by zero
+	speedSet.duration = dancevis.Util.defaultNum(speedSet.duration, new dancevis.Time({milliseconds:1}));
+
+	if (speedSet.speed) {
+		this.pixelsPerMillisecond = speedSet.speed;
+	}
+	else if (speedSet.distance && speedSet.duration) {
+		this.pixelsPerMillisecond = speedSet.distance / speedSet.duration.inMilliseconds();
+	}
+	else if (speedSet.startPosition && speedSet.endPosition && speedSet.duration) {
+		var dist = speedSet.startPosition.distance(speedSet.endPosition);
+		this.pixelsPerMillisecond = dist / speedSet.duration.inMilliseconds();
+	}
+	else {
+		throw new dancevis.DanceVisError("(1) speed or (2) start/end position with duration or (3) distance and duration must be provided.");
+	}
 }
 dancevis.Speed.prototype.equals = function(other) {
-
+	return (other.pixelsPerMillisecond == this.pixelsPerMillisecond);
 }
 dancevis.Speed.prototype.toString = function() {
-
+	var numDecimal = 2;
+	var speed = this.pixelsPerMillisecond.toFixed(numDecimal);
+	return "("+speed+" ppms)";
 }
 
 
@@ -501,9 +554,7 @@ dancevis.Dancer = function(dancerOptions) {
 		orientation: new dancevis.Orientation(0)
 	}
 
-	if(dancerOptions === undefined){
-		dancerOptions = defaultOptions;
-	}
+	dancerOptions = dancevis.Util.defaultTo(dancerOptions, defaultOptions);
 
 	this.dancerTypeId = dancevis.Util.defaultTo(dancerOptions.dancerTypeId, dancevis.DancerTypeId.FOLLOW);
 	this.dancerShape = dancerOptions.dancerShape;
@@ -515,8 +566,9 @@ dancevis.Dancer = function(dancerOptions) {
 
 	this.dancerId = dancevis.Dancer.__idUnique();
 	//this.parent = 
-	this.element = d3.select("g").append("svg:circle")
-	         		.attr("r", 2)
+	this.element = d3.select("g").append("svg:square");
+	d3.select("g").append("svg:circle")
+	         		.attr("r", 4)
 	         		.attr("fill", this.dancerColor)
 	         		.attr("stroke", this.dancerColor)
 		    		.attr("transform", "translate("+ 0 +"," + 0 + ")");
@@ -544,8 +596,6 @@ dancevis.Dancer.prototype.updateChildrenBasedOnMyShape = function(currentTime) {
 dancevis.Dancer.prototype.setMyPositionAndModifyChildren = function(position) {
 	this.position = position;
 }
-
-//console.log("enumUnique=" + dancevis.Util.__enumUnique());
 
 
 
