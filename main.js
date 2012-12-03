@@ -628,6 +628,7 @@ dancevis.Group = function(groupOptions) {
 	this.children = null;
 	this.parentGroup = null;
 	this.shape = null;
+	this.speed = null;
 	this.startTime = null;
 	this.endTime = null;
 	this.lastTime = null;
@@ -654,6 +655,7 @@ dancevis.Group = function(groupOptions) {
 		this.parentGroup.children.push(this);
 	}
 	this.shape = groupOptions.shape;
+	this.speed = new dancevis.Speed({speed:200});
 	this.startTime = groupOptions.startTime;
 	this.endTime = groupOptions.endTime;
 	this.lastTime = this.startTime;
@@ -676,7 +678,7 @@ dancevis.Group.prototype.updateChildrenBasedOnMyShape = function(currentTime) {
 		var child = this.children[i];
 		// calculate new child position based on shape
 		// CLIENT UPDATE FUNCTIONS HERE!!
-		var newPosition = this.shape.nextPosition(child.position, dt, new dancevis.Speed({speed:200}));
+		var newPosition = this.shape.nextPosition(child.position, dt, this.speed);
 		//console.log(newPosition.toString());
 		// set child position to the new one
 		child.setMyPositionAndModifyChildren(newPosition);
@@ -889,7 +891,7 @@ var innerOptions = {
 	parentGroup: outer
 }
 var inner = new dancevis.Group(innerOptions);
-
+inner.speed = new dancevis.Speed({speed:300});
 
 inner.insertChild(new dancevis.Dancer());
 
