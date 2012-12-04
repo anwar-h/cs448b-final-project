@@ -524,6 +524,7 @@ dancevis.Dancer = function(dancerOptions) {
 						.attr("cy", this.position.y)
 						.attr("fill", this.dancerColor)
 						.attr("stroke", this.dancerColor)
+
 						//.attr("transform", "translate("+ this.position.x +"," + this.position.y + ")");
 	}
 	if (this.dancerShape == dancevis.DancerShape.SQUARE){
