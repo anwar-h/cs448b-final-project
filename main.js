@@ -1119,9 +1119,11 @@ var interval = setInterval(function() {
 	var sec = time.inSeconds();
 	if (sec > 3 && sec < 5) {
 		inner1.setParent(outer2);
+		inner2.setParent(outer2);
 	}
 	else if (sec >5) {
 		inner1.setParent(outer);
+
 
 	}
 
