@@ -1,4 +1,4 @@
-     
+
 /***************** Namespaces *****************/
 // dancevis global namespace
 var dancevis = {}
@@ -498,8 +498,6 @@ dancevis.Shapes.Line.prototype.isOnShape = function(position) {
    var a = (endPoint.y - this.start_position.y) / (endPoint.x - this.start_position.x);
    var b = this.start_position.y - a * this.start_position.x;
    if ( Math.abs(position.y - (a*position.x+b)) < .001){
-      console.log(position.y);
-	  console.log(a*position.x +b);
 	  return true;
       if(position.x >= this.start_position.x && position.x <= endPoint.x){
 	       return true;
@@ -563,12 +561,6 @@ dancevis.Shapes.Circle.__type = "circle";
 dancevis.Shapes.Circle.prototype.startPosition = function() {
 
 }
-
-dancevis.Shapes.Circle.prototype.nextPosition = function(startPosition, dt, speed) {
-	if (startPosition.__type != dancevis.Position.__type ||
-		dt.__type != dancevis.Time.__type ||
-		speed.__type != dancevis.Speed.__type) {
-
 dancevis.Shapes.Circle.prototype.getOrientation = function() {
 	return this.orientation;
 }
@@ -594,7 +586,6 @@ dancevis.Shapes.Circle.prototype.nextPositionAndOrientation = function(startPosi
 	if (!startPosition || startPosition.__type != dancevis.Position.__type ||
 		!dt || dt.__type != dancevis.Time.__type ||
 		!speed || speed.__type != dancevis.Speed.__type) {
-
 		throw new dancevis.Error.DanceVisError("wrong type supplied");
 	}
 
@@ -670,15 +661,6 @@ dancevis.Shapes.Circle.prototype.isOnShape = function(position) {
 	}
 	return true;
 }
-
-dancevis.Shapes.Circle.prototype.drawCircle = function(){
- var myCircle = d3.select("g").append("svg:circle") 
-    .attr("cx", this.center.x)
-    .attr("cy", this.center.y)
-    .attr("r", this.radius)
-    .style("stroke", "rgb(6,120,155)")
-	.style("fll", "rgb(255, 255, 255)");
-
 dancevis.Shapes.Circle.prototype.showShapeOnScreen = function(bool) {
 	if (this.element) {
 		dancevis.Util.removeSVG(this.element);
@@ -832,16 +814,10 @@ dancevis.Group = function(groupOptions) {
 	this.updateChildren = true;
 	this.myChildrenUpdate = true;
 	this.exitPoints = {};
+
 	groupOptions = dancevis.Util.defaultTo(groupOptions, {});
 	if (!groupOptions.shape) 
 		throw new dancevis.Error.DanceVisError("invalid parameters to construct a group");
-	}
-	this.children = [];
-	this.parentGroup = dancevis.Util.defaultTo(groupOptions.parentGroup, null);
-	this.shape = groupOptions.shape;
-	this.startTime = groupOptions.startTime;
-	this.endTime = groupOptions.endTime;
-	this.position = dancevis.Util.defaultTo(groupOptions.position, new dancevis.Position(0,0));
 
 	if (!groupOptions.startTime || groupOptions.startTime.__type != dancevis.Time.__type)
 		throw new dancevis.Error.DanceVisError("invalid parameters to construct a group");
@@ -894,15 +870,6 @@ dancevis.Group.prototype.updateChildrenBasedOnMyShape = function(currentTime) {
 	if (!currentTime || currentTime.__type != dancevis.Time.__type) {
 		throw new dancevis.Error.DanceVisError("currentTime is not of type time");
 	}
-
-	var dt = new dancevis.Time({milliseconds:(currentTime.inMilliseconds - this.lastTime.inMilliseconds)});
-	for (var i = 0; i < this.children.length; i++) {
-		var child = this.children[i];
-		// calculate new child position based on shape
-		var newPosition = this.shape.nextPosition(child.position, dt, speed);
-		// set child position to the new one
-		child.setMyPositionAndModifyChildren(newPosition);
-
 	var curr = currentTime.inMilliseconds();
 	if (curr < this.lastTime.inMilliseconds())
 		return;
@@ -956,13 +923,6 @@ dancevis.Group.prototype.childrenTimeIs = function(currentTime) {
 			child.timeIs(currentTime);
 	}
 }
-
-dancevis.Group.prototype.setMyPositionAndModifyChildren = function(position) {
-	if (position.__type != dancevis.Position.__type) {
-		throw new dancevis.Error.DanceVisError("this is not a position");
-	}
-	this.position = position;
-
 dancevis.Group.prototype.setMyPositionAndModifyChildren = function(newPosition, newOrientation) {
 	if (!newPosition || newPosition.__type != dancevis.Position.__type) {
 		throw new dancevis.Error.DanceVisError("newPosition is not of type position");
@@ -997,13 +957,11 @@ dancevis.Group.prototype.getPosition = function() {
 }
 dancevis.Group.prototype.setPosition = function(position) {
 	this.shape.setPosition(position);
-
 }
 dancevis.Group.prototype.forwardChild = function(child, toGroup) {
 
 }
 dancevis.Group.prototype.timeIs = function(currentTime) {
-
 	if (!currentTime || currentTime.__type != dancevis.Time.__type) {
 		throw new dancevis.Error.DanceVisError("currentTime is not of type time");
 	}
@@ -1018,17 +976,12 @@ dancevis.Group.prototype.timeIs = function(currentTime) {
 		this.active = false;
 	}
 
-
 	if (this.active) {
 		this.updateChildrenBasedOnMyShape(currentTime);
 		this.lastTime = currentTime;
 	}
 }
 dancevis.Group.prototype.insertChild = function(child, index) {
-
-}
-dancevis.Group.prototype.removeChild = function(index) {
-
 	if (!child || (child.__type != dancevis.Group.__type && child.__type != dancevis.Dancer.__type)) {
 		throw new dancevis.Error.DanceVisError("child is neither a group nor a dancer");
 	}
@@ -1096,7 +1049,6 @@ dancevis.Group.prototype.setShape = function(shape) {
 	this.shape = shape;
 }
 dancevis.Group.prototype.setParent = function(parent) {
-
 	if (!parent || parent.__type != dancevis.Group.__type) {
 		throw new dancevis.Error.DanceVisError("trying to set a parent that is not a group");
 	}
@@ -1179,15 +1131,41 @@ dancevis.Dancer = function(dancerOptions) {
 	this.dancerId = dancevis.Dancer.__idUnique();
 	this.groupId = dancevis.Group.__groupIdUnique();
 	//this.parent = 
-
-	this.element = d3.select("g").append("svg:square");
-	d3.select("g").append("svg:circle")
-	         		.attr("r", 4)
-	         		.attr("fill", this.dancerColor)
-	         		.attr("stroke", this.dancerColor)
-		    		.attr("transform", "translate("+ 0 +"," + 0 + ")");
+<<<<<<< HEAD
 
 
+	if (this.dancerShape == dancevis.DancerShape.CIRCLE){
+		this.element = d3.select("g").append("svg:circle")
+						.attr("r", 2)
+						.attr("cx", this.position.x)
+						.attr("cy", this.position.y)
+						.attr("fill", this.dancerColor)
+						.attr("stroke", this.dancerColor)
+						//.attr("transform", "translate("+ this.position.x +"," + this.position.y + ")");
+	}
+	if (this.dancerShape == dancevis.DancerShape.SQUARE){
+		this.element = d3.select("g").append("svg:rect")
+						.attr("width", 2)
+						.attr("height", 2)
+						.attr("x", this.position.x)
+						.attr("y", this.position.y)
+						.attr("fill", this.dancerColor)
+						.attr("stroke", this.dancerColor)
+						//.attr("transform", "translate("+ this.position.x +"," + this.position.y + ")");
+	}
+	if (this.dancerShape == dancevis.DancerShape.TRIANGLE){
+		var top = new dancevis.Position(this.position.x, this.position.y - 20);
+		var left = new dancevis.Position(this.position.x - 20, this.position.y + 10);
+		var right = new dancevis.Position(this.position.x + 20, this.position.y + 10);
+		var points = (top + " " + left + " " + right).replace(/\(/g, "").replace(/\)/g, "");
+		console.log(points);
+		this.element = d3.select("g").append("svg:polygon")
+						.attr("points", points)
+						.attr("fill", this.dancerColor)
+						.attr("stroke", this.dancerColor)
+						.attr("transform", "translate("+ this.position.x +"," + this.position.y + ")");
+	}
+=======
 	
 	/*
 	var selection = d3.select("g").append("svg:circle")
@@ -1211,6 +1189,7 @@ dancevis.Dancer = function(dancerOptions) {
 	this.element = svgElement;
 	
 	//this.element = document.getElementById("divvy");
+>>>>>>> bbebf405e40b3008dab6b0d9c0fc01a93cb3a928
 	//don't have dancerId, parent, element
 
 }
@@ -1257,11 +1236,6 @@ dancevis.Dancer.prototype.setMyPositionAndModifyChildren = function(position, ne
 // Setup
 dancevis.Position.screenOriginIs(400, 200);
 var origin = new dancevis.Position(0, 0)
-var circle = new dancevis.Shapes.Circle(origin, 200.0);
-var div = document.getElementById("divvy");
-var speed = new dancevis.Speed({speed:200});
-var divPos = new dancevis.Position(div.offsetLeft, div.offsetTop);
-
 dancevis.Time.zeroTimeIsNow();
 
 var outercircle = new dancevis.Shapes.Circle(origin, 100);
@@ -1362,7 +1336,7 @@ var horizontal_line = new dancevis.Shapes.Line(line_start_pos, 300, new dancevis
 var line1 = new dancevis.Group({
 					shape: horizontal_line,
 					startTime: new dancevis.Time({seconds:0}),
-					endTime: new dancevis.Time({seconds:10}),
+					endTime: new dancevis.Time({seconds:6}),
 					position: horizontal_line.startPosition(),
 					speed: new dancevis.Speed({speed:70}),
 					orientation: new dancevis.Orientation(0)
@@ -1421,16 +1395,13 @@ inner3.setUpdateFunction("forever_stop", null, null, function() {
 line1.setEndCondition(function(child, index) {
 	var dist_between = this.shape.length / 4;
 	var endPos = this.shape.endPosition();
-	
-	var my_dist = child.getPosition().distance(child_before_me.getPosition());
 	if (index == 0) {
-
-		return child.getPosition()(endPos);
+		return child.getPosition().equals(endPos);
 	}
 
 	var child_before_me = this.children[index -1];
 	var my_dist = child.getPosition().distance(child_before_me.getPosition());
-	console.log(my_dist+" <= "+dist_between + " " + (my_dist <= dist_between));
+	console.log(my_dist+" <= "+dist_between);
 	if (my_dist <= dist_between) return true;
 
 	return false;
@@ -1497,10 +1468,6 @@ setTimeout(function() {
 /*
 var div = document.getElementById("divvy");
 var divPos = new dancevis.Position(div.offsetLeft, div.offsetTop);
-<<<<<<< HEAD
->>>>>>> bbebf405e40b3008dab6b0d9c0fc01a93cb3a928
-=======
->>>>>>> e73b035c4a41fe6cf30725dfdca6768277ec5635
 var nMili = 10;
 var interval = setInterval(function() {
 	var startPosition = dancevis.Position.screenToModelCoords(divPos.x, divPos.y);
