@@ -1,4 +1,4 @@
-     
+
 /***************** Namespaces *****************/
 // dancevis global namespace
 var dancevis = {}
@@ -1131,6 +1131,41 @@ dancevis.Dancer = function(dancerOptions) {
 	this.dancerId = dancevis.Dancer.__idUnique();
 	this.groupId = dancevis.Group.__groupIdUnique();
 	//this.parent = 
+<<<<<<< HEAD
+
+
+	if (this.dancerShape == dancevis.DancerShape.CIRCLE){
+		this.element = d3.select("g").append("svg:circle")
+						.attr("r", 2)
+						.attr("cx", this.position.x)
+						.attr("cy", this.position.y)
+						.attr("fill", this.dancerColor)
+						.attr("stroke", this.dancerColor)
+						//.attr("transform", "translate("+ this.position.x +"," + this.position.y + ")");
+	}
+	if (this.dancerShape == dancevis.DancerShape.SQUARE){
+		this.element = d3.select("g").append("svg:rect")
+						.attr("width", 2)
+						.attr("height", 2)
+						.attr("x", this.position.x)
+						.attr("y", this.position.y)
+						.attr("fill", this.dancerColor)
+						.attr("stroke", this.dancerColor)
+						//.attr("transform", "translate("+ this.position.x +"," + this.position.y + ")");
+	}
+	if (this.dancerShape == dancevis.DancerShape.TRIANGLE){
+		var top = new dancevis.Position(this.position.x, this.position.y - 20);
+		var left = new dancevis.Position(this.position.x - 20, this.position.y + 10);
+		var right = new dancevis.Position(this.position.x + 20, this.position.y + 10);
+		var points = (top + " " + left + " " + right).replace(/\(/g, "").replace(/\)/g, "");
+		console.log(points);
+		this.element = d3.select("g").append("svg:polygon")
+						.attr("points", points)
+						.attr("fill", this.dancerColor)
+						.attr("stroke", this.dancerColor)
+						.attr("transform", "translate("+ this.position.x +"," + this.position.y + ")");
+	}
+=======
 	
 	/*
 	var selection = d3.select("g").append("svg:circle")
@@ -1154,6 +1189,7 @@ dancevis.Dancer = function(dancerOptions) {
 	this.element = svgElement;
 	
 	//this.element = document.getElementById("divvy");
+>>>>>>> bbebf405e40b3008dab6b0d9c0fc01a93cb3a928
 	//don't have dancerId, parent, element
 
 }
