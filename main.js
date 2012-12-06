@@ -399,6 +399,7 @@ dancevis.Shapes.ShapeTypeId.toString = function(typeId) {
 
 }
 dancevis.Shapes.ShapeTypeId.isValidShapeType = function(shapeTypeId) {
+
 	var validShape = false;
 	for (var p in dancevis.Shapes.ShapeTypeId) {
 		if (dancevis.Shapes.ShapeTypeId[p] == shapeTypeId) {
@@ -738,8 +739,11 @@ dancevis.Shapes.Grid.prototype.nextPositionAndOrientation = function(startPositi
  return startPosition;
 }
 dancevis.Shapes.Grid.prototype.positionAt = function(row, col) {
-   var x = upperLeft.X + col * this.cellWidth;
-   var y = upperLeft.Y + row * this.cellHeight;
+   if(row >= this.numRows || row < 0) throw new dancevis.Error.DanceVisError("row is outside grid bounds");
+   if(col >= this.numCols || col < 0) throw new dancevis.Error.DanceVisError("col is outside grid bounds");
+   var x = this.upperLeft.x + col * this.cellWidth;
+   var y = this.upperLeft.y + row * this.cellHeight;
+   return new dancevis.Position(x,y);
 }
 dancevis.Shapes.Grid.prototype.numRows = function() {
    return this.numRows;
@@ -1494,7 +1498,26 @@ setTimeout(function() {
 	clearInterval(interval);
 }, 13000);
 
+var g = new dancevis.Shapes.Grid(3, 3, 90, 60, new dancevis.Position(200,200));
 
+
+var pos1 = g.positionAt(0,0);
+console.log(pos1);
+
+for(var i = 0; i < 4; i++){
+  for(var j = 0; j < 3; j++){
+     var pos = g.positionAt(i,j);
+	 var d = new dancevis.Dancer({ position: pos, dancerColor: "red"});
+  }
+}
+/*var pos2 = g.positionAt(0,1);
+var pos3 = g.positionAt(0,2);
+var pos4 = g.positionAt(1,0);
+var d1 = new dancevis.Dancer({ position: pos1, dancerColor: "red"});
+var d2 = new dancevis.Dancer({ position: pos2, dancerColor: "red"});
+var d3 = new dancevis.Dancer({ position: pos3, dancerColor: "red"});
+var d4 = new dancevis.Dancer({ position: pos4, dancerColor: "red"});
+*/
 /*
 var div = document.getElementById("divvy");
 var divPos = new dancevis.Position(div.offsetLeft, div.offsetTop);
