@@ -1,4 +1,4 @@
-     
+
 /***************** Namespaces *****************/
 // dancevis global namespace
 var dancevis = {}
@@ -134,6 +134,7 @@ dancevis.Position.screenOriginIs = function(left, top) {
 	}
 	dancevis.Position.screenOriginLeft = left;
 	dancevis.Position.screenOriginTop = top;
+	DrawBackground(left, top);
 }
 dancevis.Position.screenToModelCoords = function(left, top) {
 	return new dancevis.Position(left - dancevis.Position.screenOriginLeft, -1 * (top - dancevis.Position.screenOriginTop));
@@ -1448,6 +1449,81 @@ setTimeout(function() {
 	clearInterval(interval);
 }, 7000);
 */
+
+
+function DrawBackground(left, top){
+	var g = d3.select("g").append("g")
+				.attr("class", "lines")
+	var i = left, 
+		k = left;
+	var j = top,
+		m = top;
+
+	var w = document.body.offsetWidth;
+	var h = document.body.offsetHeight;
+
+	var color = "rgb(212,230,242)";
+	var boxsize = 36;
+
+	var originline = g.append("svg:line")
+		    .attr("x1", left)
+		    .attr("y1", 0)
+		    .attr("x2", left)
+		    .attr("y2", h)
+		    .style("stroke", color)
+			.style("stroke-width","2px");
+	var originline = g.append("svg:line")
+		    .attr("x1", 0)
+		    .attr("y1", top)
+		    .attr("x2", w)
+		    .attr("y2", top)
+		    .style("stroke", color)
+			.style("stroke-width","2px");
+
+	while(i > 0){
+		var myLine = g.append("svg:line")
+		    .attr("x1", i)
+		    .attr("y1", 0)
+		    .attr("x2", i)
+		    .attr("y2", h)
+		    .style("stroke", color)
+			.style("stroke-width","0.75px");
+			i -= boxsize;
+	}
+	while(j > 0){
+		var myLine = g.append("svg:line")
+		    .attr("x1", 0)
+		    .attr("y1", j)
+		    .attr("x2", w)
+		    .attr("y2", j)
+		    .style("stroke", color)
+			.style("stroke-width","0.75px");
+			j -= boxsize;
+	}
+	while(k < w){
+		var myLine = g.append("svg:line")
+		    .attr("x1", k)
+		    .attr("y1", 0)
+		    .attr("x2", k)
+		    .attr("y2", h)
+		    .style("stroke", color)
+			.style("stroke-width","0.75px");
+			k += boxsize;
+	}
+	while(m < h){
+		var myLine = g.append("svg:line")
+		    .attr("x1", 0)
+		    .attr("y1", m)
+		    .attr("x2", w)
+		    .attr("y2", m)
+		    .style("stroke", color)
+			.style("stroke-width","0.75px");
+			m += boxsize;
+	}
+}
+
+
+
 
 
 
