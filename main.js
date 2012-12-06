@@ -498,6 +498,8 @@ dancevis.Shapes.Line.prototype.isOnShape = function(position) {
    var a = (endPoint.y - this.start_position.y) / (endPoint.x - this.start_position.x);
    var b = this.start_position.y - a * this.start_position.x;
    if ( Math.abs(position.y - (a*position.x+b)) < .001){
+      console.log(position.y);
+	  console.log(a*position.x +b);
 	  return true;
       if(position.x >= this.start_position.x && position.x <= endPoint.x){
 	       return true;
