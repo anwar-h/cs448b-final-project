@@ -1,3 +1,13 @@
+(function() {
+	var w = document.body.offsetWidth;
+	var h = document.body.offsetHeight;
+
+	var svg = d3.select("body").append("svg:svg")
+		.attr("width", w)
+		.attr("height", h)
+		.append("svg:g")
+})();
+
 
 /***************** Namespaces *****************/
 // dancevis global namespace
@@ -88,7 +98,6 @@ dancevis.Util.removeSVG = function(element) {
 	var parent = element.parentNode;
 	parent.removeChild(element);
 }
-
 
 dancevis.Util.__enumUnique = dancevis.Util.counter(28374859, 1);
 
@@ -1141,7 +1150,7 @@ dancevis.Dancer = function(dancerOptions) {
 
 	this.dancerTypeId = dancevis.Util.defaultTo(dancerOptions.dancerTypeId, dancevis.DancerTypeId.FOLLOW);
 	this.dancerShape = dancevis.Util.defaultTo(dancerOptions.dancerShape, dancevis.DancerShape.CIRCLE);
-	this.dancerSize = dancevis.Util.defaultTo(dancerOptions.dancerSize, dancevis.DancerShapeSize.SMALL);
+	this.dancerSize = dancevis.Util.defaultTo(dancerOptions.dancerSize, dancevis.DancerShapeSize.MEDIUM);
 	this.dancerName = dancevis.Util.defaultTo(dancerOptions.dancerName, "");
 	this.dancerColor = dancevis.Util.defaultTo(dancerOptions.dancerColor, "black");
 	this.position = dancevis.Util.defaultTo(dancerOptions.position, new dancevis.Position(0,0));
@@ -1161,20 +1170,10 @@ dancevis.Dancer = function(dancerOptions) {
 	this.element = selection[0][0];
 	*/
 
-	var svg = document.getElementsByTagName("svg")[0];
-	var g = svg.firstChild;
-	var svgElement = document.createElementNS("http://www.w3.org/2000/svg", "circle")
-
-	svgElement.style.fill = this.dancerColor;
-	svgElement.r.baseVal.value = 5;
-	svgElement.cx.baseVal.value = this.position.x;
-	svgElement.cy.baseVal.value = this.position.y;
-	g.appendChild(svgElement);
-	this.element = svgElement;
-	
-	//this.element = document.getElementById("divvy");
-	//don't have dancerId, parent, element
-
+	var radius = 7;
+	if (this.dancerShape == dancevis.DancerShapeSize.SMALL) radius = 5;
+	else if (this.dancerShape == dancevis.DancerShapeSize.LARGE) radius = 8;
+	this.element = dancevis.Util.makeSVGCircle(this.position, radius, this.dancerColor, false);
 }
 // Static Variables for class Dancer
 dancevis.Dancer.__type = "dancer";
@@ -1324,7 +1323,19 @@ var line1 = new dancevis.Group({
 					speed: new dancevis.Speed({speed:70}),
 					orientation: new dancevis.Orientation(0)
 				});
-line1.showShapeOnScreen(true);
+//line1.showShapeOnScreen(true);
+
+// line2 group
+var vertical_line = new dancevis.Shapes.Line(new dancevis.Position(-150,140), 300, new dancevis.Orientation(-90, false));
+var line2 = new dancevis.Group({
+					shape: vertical_line,
+					startTime: new dancevis.Time({seconds:0}),
+					endTime: new dancevis.Time({seconds:8}),
+					position: vertical_line.startPosition(),
+					speed: new dancevis.Speed({speed:70}),
+					orientation: new dancevis.Orientation(-90)
+				});
+//line2.showShapeOnScreen(true);
 
 
 // Inner6 group
@@ -1423,13 +1434,38 @@ var pos4 = origin.positionInDirection(200, new dancevis.Orientation(0, false));
 var pos5 = origin.positionInDirection(200, new dancevis.Orientation(0, false));
 var pos6 = origin.positionInDirection(200, new dancevis.Orientation(0, false));
 
-var dancer1 = new dancevis.Dancer({position:pos1});
-var dancer2 = new dancevis.Dancer({position:pos2});
-var dancer3 = new dancevis.Dancer({position:pos3});
-var dancer4 = new dancevis.Dancer({position:pos4});
-var dancer5 = new dancevis.Dancer({position:pos5});
-var dancer6 = new dancevis.Dancer({position:pos6});
-var dancerWild = new dancevis.Dancer({position: new dancevis.Position(300, 300)});
+var dancer1 = new dancevis.Dancer({
+	position: pos1,
+	dancerColor: "steelblue"
+});
+var dancer2 = new dancevis.Dancer({
+	position: pos2,
+	dancerColor: "steelblue"
+});
+var dancer3 = new dancevis.Dancer({
+	position: pos3,
+	dancerColor: "steelblue"
+});
+var dancer4 = new dancevis.Dancer({
+	position: pos4,
+	dancerColor: "steelblue"
+});
+var dancer5 = new dancevis.Dancer({
+	position: pos5,
+	dancerColor: "steelblue"
+});
+var dancer6 = new dancevis.Dancer({
+	position:pos6,
+	dancerColor: "steelblue"
+});
+var dancerWild = new dancevis.Dancer({
+	position: new dancevis.Position(300, 300),
+	dancerColor: "steelblue"
+});
+
+//var dancer7 = new dancevis.Dancer({position:pos4});
+//var dancer8 = new dancevis.Dancer({position:pos5});
+//var dancer9 = new dancevis.Dancer({position:pos6});
 
 // 1, 3, 4, 5, 6 each get one dancer
 inner1.insertChild(dancer1);
