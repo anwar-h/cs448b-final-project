@@ -1362,7 +1362,7 @@ var horizontal_line = new dancevis.Shapes.Line(line_start_pos, 300, new dancevis
 var line1 = new dancevis.Group({
 					shape: horizontal_line,
 					startTime: new dancevis.Time({seconds:0}),
-					endTime: new dancevis.Time({seconds:10}),
+					endTime: new dancevis.Time({seconds:8}),
 					position: horizontal_line.startPosition(),
 					speed: new dancevis.Speed({speed:70}),
 					orientation: new dancevis.Orientation(0)
@@ -1381,8 +1381,6 @@ var inner6 = new dancevis.Group({
 					orientation: new dancevis.Orientation(0)
 				});
 //inner6.showShapeOnScreen(true);
-
-
 
 
 
@@ -1421,16 +1419,19 @@ inner3.setUpdateFunction("forever_stop", null, null, function() {
 line1.setEndCondition(function(child, index) {
 	var dist_between = this.shape.length / 4;
 	var endPos = this.shape.endPosition();
-	
-	var my_dist = child.getPosition().distance(child_before_me.getPosition());
-	if (index == 0) {
 
-		return child.getPosition()(endPos);
+	var startPos = this.shape.startPosition();
+
+	var dist_to_end = child.getPosition().distance(endPos);
+	var dist_to_start = child.getPosition().distance(startPos);
+
+	if (index == 0) {
+		return (dist_to_start >= this.shape.length);
 	}
 
 	var child_before_me = this.children[index -1];
 	var my_dist = child.getPosition().distance(child_before_me.getPosition());
-	console.log(my_dist+" <= "+dist_between + " " + (my_dist <= dist_between));
+
 	if (my_dist <= dist_between) return true;
 
 	return false;
