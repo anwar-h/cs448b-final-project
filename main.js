@@ -1039,6 +1039,10 @@ dancevis.Group.prototype.addExitPoint = function(groupEPObj) {
 	if (!groupEPObj.nextGroup.shape.isOnShape(groupEPObj.position, 3))
 		throw new dancevis.Error.DanceVisError("exit position is not on the next group's shape");
 
+	groupEPObj.element = null;
+	if (groupEPObj.showOnScreen)
+		groupEPObj.element = dancevis.Util.makeSVGCircle(groupEPObj.position.screenCoords(), 5, "blue", false);
+
 	var name = groupEPObj.name || groupEPObj.position.toString();
 	this.exitPoints[name] = groupEPObj;
 }
@@ -1239,7 +1243,7 @@ var outer = new dancevis.Group({
 // Outer2 group
 var outer2 = new dancevis.Group({
 					shape: outercircle,
-					startTime: new dancevis.Time({seconds:3}),
+					startTime: new dancevis.Time({seconds:0}),
 					endTime: new dancevis.Time({seconds:30}),
 					speed: new dancevis.Speed({speed:70}),
 					position: bottom1,
@@ -1343,20 +1347,29 @@ outer.addExitPoint({
 	endTime: line1.endTime,
 	position: line1.shape.startPosition(),
 	nextGroup: line1,
-	name: "to_line"
+	showOnScreen: true,
+	name: "to_line1"
 });
 
-var exitPoint2 = outer2.shape.positionAtAngle(new dancevis.Orientation(320, false));
-dancevis.Util.makeSVGCircle(exitPoint2.screenCoords(), 5, "blue", false);
 
 outer.addExitPoint({
 	startTime: null,
 	endTime: null,
-	position: exitPoint2,
+	position: outer2.shape.positionAtAngle(new dancevis.Orientation(320, false)),
 	nextGroup: outer2,
-	name: "to_circle"
+	showOnScreen: true,
+	name: "to_outer2"
 });
 
+
+outer2.addExitPoint({
+	startTime: null,
+	endTime: null,
+	position: outer2.shape.positionAtAngle(new dancevis.Orientation(80, false)),
+	nextGroup: outer,
+	showOnScreen: true,
+	name: "to_outer"
+});
 
 
 outer.setBeginAction(function(child, index) {
