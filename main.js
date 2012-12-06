@@ -220,6 +220,10 @@ dancevis.Orientation.prototype.angleBetween = function(other) {
 	var diff2 = this.angle - other.angle;
 	return diff1 > diff2 ? new dancevis.Orientation(diff2) : new dancevis.Orientation(diff1);
 }
+dancevis.Orientation.prototype.isBetween = function(angle1, angle2) {
+	console.log("STILL NEED TO DO THIS");
+	return true;
+}
 dancevis.Orientation.prototype.toString = function() {
 	var numDecimal = 2;
 	var rad = this.inRadians().toFixed(numDecimal);
@@ -493,11 +497,12 @@ dancevis.Shapes.Line.prototype.distanceToLine = function() {
      
 }
 
-dancevis.Shapes.Line.prototype.isOnShape = function(position) {
+dancevis.Shapes.Line.prototype.isOnShape = function(position, err) {
+	err = err || .001;
    var endPoint = this.endPosition();
    var a = (endPoint.y - this.start_position.y) / (endPoint.x - this.start_position.x);
    var b = this.start_position.y - a * this.start_position.x;
-   if ( Math.abs(position.y - (a*position.x+b)) < .001){
+   if ( Math.abs(position.y - (a*position.x+b)) < err){
 	  return true;
       if(position.x >= this.start_position.x && position.x <= endPoint.x){
 	       return true;
@@ -646,17 +651,21 @@ dancevis.Shapes.Circle.prototype.startAngle = function() {
 dancevis.Shapes.Circle.prototype.stopAngle = function() {
 	return this.stopAngle;
 }
-dancevis.Shapes.Circle.prototype.isOnShape = function(position) {
+dancevis.Shapes.Circle.prototype.isOnShape = function(position, err) {
 	if (!position || position.__type != dancevis.Position.__type)
 		throw new dancevis.Error.DanceVisError("wrong type supplied");
+
+	err = err || 2;
+
 	var distFromCenter = this.center.distance(position);
-	if (!dancevis.Util.floatsEqual(distFromCenter, this.radius))
+	if ((distFromCenter - this.radius) > err) {
 		return false;
+	}
 	var positionAngle = this.angleFromPosition(position);
 	var stopIsBigger = this.startAngle.inRadians() < this.stopAngle.inRadians();
 	var big = stopIsBigger ? this.stopAngle : this.startAngle;
 	var small = stopIsBigger ? this.startAngle : this.stopAngle;
-	if (positionAngle.inRadians() < small.inRadians() || positionAngle.inRadians() > big.inRadians()) {
+	if (!positionAngle.isBetween(this.startAngle, this.stopAngle)) {
 		return false;
 	}
 	return true;
@@ -1024,9 +1033,11 @@ dancevis.Group.prototype.addExitPoint = function(groupEPObj) {
 		if (!groupEPObj.endTime || groupEPObj.endTime.__type != dancevis.Time.__type) 
 			throw new dancevis.Error.DanceVisError("endTime is not of type time");		
 	}
-	
-	if (!groupEPObj.nextGroup.shape.isOnShape(groupEPObj.position))
-		throw new dancevis.Error.DanceVisError("exit position is not on the next group's shape")
+	if (!this.shape.isOnShape(groupEPObj.position, 3))
+		throw new dancevis.Error.DanceVisError("position is not on the this group's shape");
+
+	if (!groupEPObj.nextGroup.shape.isOnShape(groupEPObj.position, 3))
+		throw new dancevis.Error.DanceVisError("exit position is not on the next group's shape");
 
 	var name = groupEPObj.name || groupEPObj.position.toString();
 	this.exitPoints[name] = groupEPObj;
@@ -1037,7 +1048,11 @@ dancevis.Group.prototype.removeChildByIndex = function(index) {
 	}
 	if (index > this.children.length)
 		return;
-	this.children.splice(index, 1);
+
+	var child = this.children.splice(index, 1);
+	if (this.endAction) {
+		this.endAction.call(this, child, index);
+	}
 }
 dancevis.Group.prototype.setOptions = function(options) {
 
@@ -1230,7 +1245,7 @@ var outer2 = new dancevis.Group({
 					position: bottom1,
 					orientation: new dancevis.Orientation(0)
 				});
-outer2.showShapeOnScreen(false);
+//outer2.showShapeOnScreen(false);
 
 
 // Inner1 group
@@ -1324,12 +1339,26 @@ var inner6 = new dancevis.Group({
 
 // Outer 
 outer.addExitPoint({
-	startTime: null,
-	endTime: null,
+	startTime: dancevis.Time.now(),
+	endTime: line1.endTime,
 	position: line1.shape.startPosition(),
 	nextGroup: line1,
 	name: "to_line"
-})
+});
+
+var exitPoint2 = outer2.shape.positionAtAngle(new dancevis.Orientation(320, false));
+dancevis.Util.makeSVGCircle(exitPoint2.screenCoords(), 5, "blue", false);
+
+outer.addExitPoint({
+	startTime: null,
+	endTime: null,
+	position: exitPoint2,
+	nextGroup: outer2,
+	name: "to_circle"
+});
+
+
+
 outer.setBeginAction(function(child, index) {
 	//console.log(child.position());
 	//console.log(new dancevis.Time());
@@ -1421,14 +1450,14 @@ var interval = setInterval(function() {
 	//console.log(inner5.getOrientation());
 	//console.log(inner6.getOrientation());
 
-	//outer2.timeIs(time);
+	outer2.timeIs(time);
 	line1.timeIs(time);
 }, nMili);
 
 
 setTimeout(function() {
 	clearInterval(interval);
-}, 10000);
+}, 13000);
 
 
 /*
