@@ -1498,18 +1498,7 @@ setTimeout(function() {
 	clearInterval(interval);
 }, 13000);
 
-var g = new dancevis.Shapes.Grid(3, 3, 90, 60, new dancevis.Position(200,200));
 
-
-var pos1 = g.positionAt(0,0);
-console.log(pos1);
-
-for(var i = 0; i < 4; i++){
-  for(var j = 0; j < 3; j++){
-     var pos = g.positionAt(i,j);
-	 var d = new dancevis.Dancer({ position: pos, dancerColor: "red"});
-  }
-}
 /*var pos2 = g.positionAt(0,1);
 var pos3 = g.positionAt(0,2);
 var pos4 = g.positionAt(1,0);
