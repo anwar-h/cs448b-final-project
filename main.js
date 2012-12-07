@@ -330,12 +330,12 @@ dancevis.Speed.prototype.speed = function() {
 	return this.pixelsPerSecond;
 }
 dancevis.Speed.prototype.setSpeed = function(speedSet) {
-	speedSet = dancevis.Util.defaultTo(speedSet, {});
+	speedSet = dancevis.Util.defaultTo(speedSet, {speed:0});
 
 	// prevent divide by zero
 	speedSet.duration = dancevis.Util.defaultTo(speedSet.duration, new dancevis.Time({milliseconds:1}));
 
-	if (speedSet.speed) {
+	if (dancevis.Util.isNum(speedSet.speed)) {
 		this.pixelsPerSecond = speedSet.speed;
 	}
 	else if (speedSet.distance && speedSet.duration) {
@@ -604,8 +604,15 @@ dancevis.Shapes.Circle.prototype.setPosition = function(position) {
 	}
 }
 dancevis.Shapes.Circle.prototype.nextPositionAndOrientation = function(startPosition, startOrientation, dt, speed) {
-	if (!startPosition || startPosition.__type != dancevis.Position.__type ||
-		!dt || dt.__type != dancevis.Time.__type ||
+	if (startPosition === null) {
+		if (startOrientation === null)
+			throw new dancevis.Error.DanceVisError("either startPosition or startOrientation must be non-null");
+		startPosition = this.positionAtAngle(startOrientation);
+	}
+	if (startOrientation === null && startPosition === null) {
+		throw new dancevis.Error.DanceVisError("either startPosition or startOrientation must be non-null");
+	}
+	if (!dt || dt.__type != dancevis.Time.__type ||
 		!speed || speed.__type != dancevis.Speed.__type) {
 		throw new dancevis.Error.DanceVisError("wrong type supplied");
 	}
@@ -614,6 +621,7 @@ dancevis.Shapes.Circle.prototype.nextPositionAndOrientation = function(startPosi
 	var dist = dt.inSeconds() * speed.speed();
 	var radiansCovered = dist / this.radius;
 	var positionAngle = this.angleFromPosition(startPosition);
+
 	if (this.clockwise) {
 		var newAngle =  new dancevis.Orientation(positionAngle.inRadians() - radiansCovered);
 		var nextPos = this.center.positionInDirection(this.radius, newAngle);
@@ -638,11 +646,14 @@ dancevis.Shapes.Circle.prototype.positionAtAngle = function(angle) {
 dancevis.Shapes.Circle.prototype.angleFromPosition = function(position) {
 	if (!position || position.__type != dancevis.Position.__type)
 		throw new dancevis.Error.DanceVisError("wrong type supplied");
+
 	if (this.center.equals(position))
 		return new dancevis.Orientation(0);
+
 	var x = position.x - this.center.x;
 	var y = position.y - this.center.y;
 	var atan = Math.atan(y / x);
+
 	if (x < 0) atan += Math.PI;
 	return new dancevis.Orientation(atan);
 }
@@ -671,10 +682,10 @@ dancevis.Shapes.Circle.prototype.isOnShape = function(position, err) {
 	if (!position || position.__type != dancevis.Position.__type)
 		throw new dancevis.Error.DanceVisError("wrong type supplied");
 
-	err = err || 2;
+	err = err || 0;
 
 	var distFromCenter = this.center.distance(position);
-	if ((distFromCenter - this.radius) > err) {
+	if (Math.abs(distFromCenter - this.radius) > err) {
 		return false;
 	}
 	var positionAngle = this.angleFromPosition(position);
@@ -828,16 +839,15 @@ dancevis.Group = function(groupOptions) {
 	this.endTime = null;
 	this.lastTime = null;
 	this.active = false;
-	this.position = null;
-	this.orientation = null;
-	this.beginAction = null;
-	this.endAction = null;
+	this.onChildAddition = null;
+	this.onChildRemoval = null;
 	this.endCondition = null;
 	this.clientUpdateFunctions = null;
 	this.groupId = null;
 	this.updateChildren = true;
 	this.myChildrenUpdate = true;
 	this.exitPoints = {};
+	this.initialPlacementControl = null;
 
 	groupOptions = dancevis.Util.defaultTo(groupOptions, {});
 	if (!groupOptions.shape) 
@@ -852,8 +862,8 @@ dancevis.Group = function(groupOptions) {
 	if (!groupOptions.speed || groupOptions.speed.__type != dancevis.Speed.__type)
 		throw new dancevis.Error.DanceVisError("invalid parameters to construct a group");
 
-	if (!groupOptions.position || groupOptions.position.__type != dancevis.Position.__type) 
-		throw new dancevis.Error.DanceVisError("invalid parameters to construct a group");
+	//if (!groupOptions.position || groupOptions.position.__type != dancevis.Position.__type) 
+	//	throw new dancevis.Error.DanceVisError("invalid parameters to construct a group");
 	
 	if (!groupOptions.orientation || groupOptions.orientation.__type != dancevis.Orientation.__type) 
 		throw new dancevis.Error.DanceVisError("invalid parameters to construct a group");
@@ -875,7 +885,7 @@ dancevis.Group = function(groupOptions) {
 	this.endTime = groupOptions.endTime.copy();
 	this.lastTime = this.startTime.copy();
 
-	this.setPosition(groupOptions.position.copy());
+	if (groupOptions.position) this.setPosition(groupOptions.position.copy());
 	this.setOrientation(groupOptions.orientation.copy());
 
 	this.clientUpdateFunctions = {};
@@ -917,7 +927,6 @@ dancevis.Group.prototype.updateChildrenBasedOnMyShape = function(currentTime) {
 				var validTime = (ep.startTime === null && ep.endTime === null) || currentTime.isBetween(ep.startTime, ep.endTime);
 				var validDist = child.getPosition().distance(ep.position) <= 1;
 				if (validTime && validDist) {
-				    console.log(currentTime.inSeconds());
 					child.setParent(ep.nextGroup);
 				}
 			}
@@ -949,22 +958,23 @@ dancevis.Group.prototype.childrenTimeIs = function(currentTime) {
 	}
 }
 dancevis.Group.prototype.setMyPositionAndModifyChildren = function(newPosition, newOrientation) {
-	if (!newPosition || newPosition.__type != dancevis.Position.__type) {
+	if (!newPosition || newPosition.__type != dancevis.Position.__type)
 		throw new dancevis.Error.DanceVisError("newPosition is not of type position");
-	}
-	if (!newOrientation || newOrientation.__type != dancevis.Orientation.__type) {
+
+	if (!newOrientation || newOrientation.__type != dancevis.Orientation.__type)
 		throw new dancevis.Error.DanceVisError("newOrientation is not of type orientation");
-	}
+
 
 	var dx = newPosition.x - this.getPosition().x;
 	var dy = newPosition.y - this.getPosition().y;
-	var dtheta = newOrientation.inRadians() - this.getOrientation().inRadians();
+	var dtheta = new dancevis.Orientation(newOrientation.inRadians() - this.getOrientation().inRadians());
 
 	for (var i = 0; i < this.children.length; i++) {
 		var child = this.children[i];
 		var childPos = child.getPosition();
+		//var newChildPosition = new dancevis.Position(childPos.x + (dx * dtheta.cos()), childPos.y + (dy * dtheta.sin()));
 		var newChildPosition = new dancevis.Position(childPos.x + dx, childPos.y + dy);
-		var newChildOrientation = new dancevis.Orientation(child.getOrientation().inRadians() + dtheta);
+		var newChildOrientation = new dancevis.Orientation(child.getOrientation().inRadians() + dtheta.inRadians());
 
 		child.setMyPositionAndModifyChildren(newChildPosition, newChildOrientation);
 	}
@@ -982,9 +992,6 @@ dancevis.Group.prototype.getPosition = function() {
 }
 dancevis.Group.prototype.setPosition = function(position) {
 	this.shape.setPosition(position);
-}
-dancevis.Group.prototype.forwardChild = function(child, toGroup) {
-
 }
 dancevis.Group.prototype.timeIs = function(currentTime) {
 	if (!currentTime || currentTime.__type != dancevis.Time.__type) {
@@ -1011,16 +1018,22 @@ dancevis.Group.prototype.insertChild = function(child, index) {
 		throw new dancevis.Error.DanceVisError("child is neither a group nor a dancer");
 	}
 	index = dancevis.Util.defaultNum(index, this.children.length);
-	//this.shape.add
-	var update = this.shape.nextPositionAndOrientation(child.getPosition(), null, new dancevis.Time(), this.speed);
+	var childPos = this.shape.isOnShape(child.getPosition()) ? child.getPosition() : null;
+	var childOri = childPos === null ? child.getOrientation() : null;
 
+	var update = this.shape.nextPositionAndOrientation(childPos, childOri, new dancevis.Time(), this.speed);
+	console.log(child.getPosition());
+	console.log(this.shape.isOnShape(child.getPosition()));
 	child.setMyPositionAndModifyChildren(update.position, update.orientation);
-	
-	if (index >= this.children.length) this.children.push(child);
+
+	if (index >= this.children.length) {
+		this.children.push(child);
+		index = this.children.length - 1;
+	}
 	else this.children.splice(index, 0, child);
 	
-	if (this.beginAction) {
-		this.beginAction.call(this, child, index);
+	if (this.onChildAddition) {
+		this.onChildAddition.call(this, child, index);
 	}
 }
 dancevis.Group.prototype.removeChildById = function(groupId) {
@@ -1074,8 +1087,8 @@ dancevis.Group.prototype.removeChildByIndex = function(index) {
 		return;
 
 	var child = this.children.splice(index, 1);
-	if (this.endAction) {
-		this.endAction.call(this, child, index);
+	if (this.onChildRemoval) {
+		this.onChildRemoval.call(this, child, index);
 	}
 }
 dancevis.Group.prototype.setOptions = function(options) {
@@ -1097,11 +1110,11 @@ dancevis.Group.prototype.setParent = function(parent) {
 	this.parentGroup = parent;
 	this.parentGroup.insertChild(this);
 }
-dancevis.Group.prototype.setBeginAction = function(func) {
-	this.beginAction = func;
+dancevis.Group.prototype.setOnChildAddition = function(func) {
+	this.onChildAddition = func;
 }
-dancevis.Group.prototype.setEndAction = function(func) {
-	this.endAction = func;
+dancevis.Group.prototype.setOnChildRemoval = function(func) {
+	this.onChildRemoval = func;
 }
 dancevis.Group.prototype.setEndCondition = function(func) {
 	this.endCondition = func;
