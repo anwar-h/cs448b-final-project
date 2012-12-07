@@ -6,6 +6,8 @@
 <body style="margin: 0px; padding: 0px;">
 	<script type="text/javascript" src="http://mbostock.github.com/d3/d3.js?1.27.2"></script>
 	<div id="divvy" style="top: 400px; left: 200px; width: 50px; height: 50px; position: absolute; border: 1px solid black; text-align: center;"></div>
+<<<<<<< HEAD
+=======
 
 	<div class="buttons_container">
 	    <div class="buttons centered">
@@ -18,7 +20,23 @@
 
 
 	<script type = "text/javascript" src="ui.js"></script>
-	<script type="text/javascript"></script>
+	<script type="text/javascript">
+
+		//var w = 960,
+	    //var h = 500;
+	    var w = document.body.offsetWidth;
+	    var h = document.body.offsetHeight;
+
+
+
+		var svg = d3.select("body").append("svg:svg")
+	    .attr("width", w)
+	    .attr("height", h)
+		.append("svg:g")
+		//.attr("transform", "translate("+ (w/2) +"," + (h / 2) + ")");
+
+	</script>
+>>>>>>> michelle
 
 	<script src="main.js"></script>
 </body>
