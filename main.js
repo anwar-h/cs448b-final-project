@@ -1054,6 +1054,9 @@ dancevis.Group.prototype.addExitPoint = function(groupEPObj) {
 	if (!groupEPObj.nextGroup.shape.isOnShape(groupEPObj.position, 3))
 		throw new dancevis.Error.DanceVisError("exit position is not on the next group's shape");
 
+	if (groupEPObj.endTime.inMilliseconds() < groupEPObj.startTime.inMilliseconds())
+		throw new dancevis.Error.DanceVisError("endTime is earlier than startTime");
+
 	groupEPObj.element = null;
 	if (groupEPObj.showOnScreen)
 		groupEPObj.element = dancevis.Util.makeSVGCircle(groupEPObj.position.screenCoords(), 5, "blue", false);
