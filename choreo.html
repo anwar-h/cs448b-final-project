@@ -1,0 +1,140 @@
+<html>
+<head>
+	<title>Anwar's Sample</title>
+</head>
+
+<body style="margin: 0px; padding: 0px;">
+<script type="text/javascript" src="http://mbostock.github.com/d3/d3.js?1.27.2"></script>
+<script src="main.js"></script>
+<script type="text/javascript">
+
+
+// Setup
+dancevis.Position.screenOriginIs(document.body.offsetWidth/2, document.body.offsetHeight/2);
+var origin = new dancevis.Position(0, 0);
+dancevis.Time.zeroTimeIsNow();
+
+var outercircle = new dancevis.Shapes.Circle(origin, 100);
+var innercircle = new dancevis.Shapes.Circle(origin, 10);
+
+// Outer group
+var outer = new dancevis.Group({
+					shape: outercircle,
+					startTime: dancevis.Time.now(),
+					endTime: new dancevis.Time({seconds:20}),
+					speed: new dancevis.Speed({speed:70}),
+					position: outercircle.center,
+					orientation: new dancevis.Orientation(0)
+				});
+outer.setUpdateFunction("stop", new dancevis.Time({seconds:10}), new dancevis.Time({seconds:12}), function() {
+	this.updateChildren = false;
+});
+
+outer.setUpdateFunction("clockwise", new dancevis.Time({seconds:12}), outer.endTime, function() {
+	this.shape.clockwise = true;
+});
+
+for(var i = 0; i < 6; i++){
+    var couple = new dancevis.Group({
+					shape: innercircle,
+					startTime: dancevis.Time.now(),
+					endTime: outer.endTime,
+					position: origin.positionInDirection(200, new dancevis.Orientation(60*i, false)),
+					speed: new dancevis.Speed({speed:50}),
+					parentGroup: outer,
+					orientation: new dancevis.Orientation(0)
+				});
+	couple.showShapeOnScreen(false);
+	couple.setUpdateFunction("pivot", new dancevis.Time({seconds:10}), new dancevis.Time({seconds:12}), function() {
+	    this.updateChildren = false;
+	});
+	var pos1 = couple.getPosition().positionInDirection(200, new dancevis.Orientation(60*i, false)); // false for degrees
+	var pos2 = couple.getPosition().positionInDirection(200, new dancevis.Orientation(60*i + 180, false));
+	
+	var dancer1 = new dancevis.Dancer({
+			position: pos1,
+			dancerColor: "red",
+			dancerSize: dancevis.DancerShapeSize.LARGE
+    });
+    var dancer2 = new dancevis.Dancer({
+	       position: pos2,
+	       dancerColor: "steelBlue",
+		   dancerSize: dancevis.DancerShapeSize.LARGE
+   });
+   couple.insertChild(dancer1);
+   couple.insertChild(dancer2);
+}
+
+// line1 group
+var line_start_pos = outercircle.positionAtAngle(new dancevis.Orientation(30, false));
+var horizontal_line = new dancevis.Shapes.Line(line_start_pos, 300, new dancevis.Orientation(0));
+var line1 = new dancevis.Group({
+					shape: horizontal_line,
+					startTime: new dancevis.Time({seconds:15}),
+					endTime: new dancevis.Time({seconds:25}),
+					position: horizontal_line.startPosition(),
+					speed: new dancevis.Speed({speed:70}),
+					orientation: new dancevis.Orientation(0)
+				});
+//line1.showShapeOnScreen(true);
+
+// Outer 
+outer.addExitPoint({
+	startTime: new dancevis.Time({seconds:15}),
+	endTime: line1.endTime,
+	position: line1.shape.startPosition(),
+	nextGroup: line1,
+	showOnScreen: true,
+	name: "to_line1"
+});
+
+line1.setEndCondition(function(child, index) {
+	var dist_between = this.shape.length / 4;
+	var endPos = this.shape.endPosition();
+	var startPos = this.shape.startPosition();
+
+	var dist_to_end = child.getPosition().distance(endPos);
+	var dist_to_start = child.getPosition().distance(startPos);
+
+	if (index == 0) {
+		return (dist_to_start >= this.shape.length);
+	}
+
+	var child_before_me = this.children[index -1];
+	var my_dist = child.getPosition().distance(child_before_me.getPosition());
+	if (my_dist <= dist_between) return true;
+
+	return false;
+});
+
+var nMili = 10;
+var interval = setInterval(function() {
+	var time = dancevis.Time.now();
+	outer.timeIs(time);
+	var sec = time.inSeconds();
+	
+	/*if (sec > 3 && sec < 5) {
+		inner1.setParent(outer2);
+		inner2.setParent(outer2);
+	}
+	else if (sec >5) {
+		inner1.setParent(outer);
+	}
+	*/
+
+	//console.log("\n");
+	//console.log(inner4.getOrientation());
+	//console.log(inner5.getOrientation());
+	//console.log(inner6.getOrientation());
+
+	line1.timeIs(time);
+}, nMili);
+
+
+setTimeout(function() {
+	clearInterval(interval);
+}, 30000);
+
+</script>
+</body>
+</html>

@@ -917,6 +917,7 @@ dancevis.Group.prototype.updateChildrenBasedOnMyShape = function(currentTime) {
 				var validTime = (ep.startTime === null && ep.endTime === null) || currentTime.isBetween(ep.startTime, ep.endTime);
 				var validDist = child.getPosition().distance(ep.position) <= 1;
 				if (validTime && validDist) {
+				    console.log(currentTime.inSeconds());
 					child.setParent(ep.nextGroup);
 				}
 			}
@@ -1166,8 +1167,8 @@ dancevis.Dancer = function(dancerOptions) {
 	this.groupId = dancevis.Group.__groupIdUnique();
 
 	var radius = 7;
-	if (this.dancerShape == dancevis.DancerShapeSize.SMALL) radius = 6;
-	else if (this.dancerShape == dancevis.DancerShapeSize.LARGE) radius = 8;
+	if (this.dancerSize == dancevis.DancerShapeSize.SMALL) radius = 6;
+	else if (this.dancerSize == dancevis.DancerShapeSize.LARGE) radius = 10;
 	this.element = dancevis.Util.makeSVGCircle(this.position, radius, this.dancerColor, false);
 }
 // Static Variables for class Dancer
