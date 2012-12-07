@@ -1209,17 +1209,6 @@ dancevis.Dancer.prototype.setMyPositionAndModifyChildren = function(position, ne
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
 function DrawBackground(left, top){
 	var g = d3.select("g").append("g")
 				.attr("class", "lines")
