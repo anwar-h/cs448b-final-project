@@ -237,6 +237,8 @@ dancevis.Orientation.prototype.isBetween = function(angle1, angle2) {
 	if (!angle2 || angle2.__type != dancevis.Orientation.__type)
 		throw new dancevis.Error.DanceVisError("wrong type supplied");
 
+	
+
 	console.log("STILL NEED TO DO THIS");
 	return true;
 }
@@ -495,6 +497,11 @@ dancevis.Shapes.Line.prototype.setPosition = function(position) {
 	}
 }
 dancevis.Shapes.Line.prototype.nextPositionAndOrientation = function(startPosition, startOrientation, dt, speed) {
+	if (!dt || dt.__type != dancevis.Time.__type ||
+		!speed || speed.__type != dancevis.Speed.__type) {
+		throw new dancevis.Error.DanceVisError("wrong type supplied");
+	}
+
 	var nextX = startPosition.x + (speed.speed()*dt.inSeconds())*this.angle.cos();
 	var nextY = startPosition.y + (speed.speed()*dt.inSeconds())*this.angle.sin();
 	
@@ -1018,12 +1025,17 @@ dancevis.Group.prototype.insertChild = function(child, index) {
 		throw new dancevis.Error.DanceVisError("child is neither a group nor a dancer");
 	}
 	index = dancevis.Util.defaultNum(index, this.children.length);
-	var childPos = this.shape.isOnShape(child.getPosition()) ? child.getPosition() : null;
-	var childOri = childPos === null ? child.getOrientation() : null;
+
+	if (this.shape.__type == dancevis.Shapes.Circle.__type) {
+		var childPos = this.shape.isOnShape(child.getPosition(), 2) ? child.getPosition() : null;
+		var childOri = childPos === null ? child.getOrientation() : null;
+	}
+	else {
+		var childPos = child.getPosition();
+		var childOri = child.getOrientation();
+	}
 
 	var update = this.shape.nextPositionAndOrientation(childPos, childOri, new dancevis.Time(), this.speed);
-	console.log(child.getPosition());
-	console.log(this.shape.isOnShape(child.getPosition()));
 	child.setMyPositionAndModifyChildren(update.position, update.orientation);
 
 	if (index >= this.children.length) {
