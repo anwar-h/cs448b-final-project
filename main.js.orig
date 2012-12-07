@@ -1,3 +1,16 @@
+<<<<<<< HEAD
+=======
+(function() {
+	var w = document.body.offsetWidth;
+	var h = document.body.offsetHeight;
+
+	var svg = d3.select("body").append("svg:svg")
+		.attr("width", w)
+		.attr("height", h)
+		.append("svg:g")
+})();
+
+>>>>>>> master
 
 /***************** Namespaces *****************/
 // dancevis global namespace
@@ -89,7 +102,6 @@ dancevis.Util.removeSVG = function(element) {
 	parent.removeChild(element);
 }
 
-
 dancevis.Util.__enumUnique = dancevis.Util.counter(28374859, 1);
 
 dancevis.Error.log = function(err) {
@@ -134,6 +146,7 @@ dancevis.Position.screenOriginIs = function(left, top) {
 	}
 	dancevis.Position.screenOriginLeft = left;
 	dancevis.Position.screenOriginTop = top;
+	DrawBackground(left, top);
 }
 dancevis.Position.screenToModelCoords = function(left, top) {
 	return new dancevis.Position(left - dancevis.Position.screenOriginLeft, -1 * (top - dancevis.Position.screenOriginTop));
@@ -219,6 +232,19 @@ dancevis.Orientation.prototype.angleBetween = function(other) {
 	var diff1 = other.angle - this.angle;
 	var diff2 = this.angle - other.angle;
 	return diff1 > diff2 ? new dancevis.Orientation(diff2) : new dancevis.Orientation(diff1);
+}
+dancevis.Orientation.prototype.isBetween = function(angle1, angle2) {
+<<<<<<< HEAD
+=======
+	if (!angle1 || angle1.__type != dancevis.Orientation.__type)
+		throw new dancevis.Error.DanceVisError("wrong type supplied");
+
+	if (!angle2 || angle2.__type != dancevis.Orientation.__type)
+		throw new dancevis.Error.DanceVisError("wrong type supplied");
+
+>>>>>>> master
+	console.log("STILL NEED TO DO THIS");
+	return true;
 }
 dancevis.Orientation.prototype.toString = function() {
 	var numDecimal = 2;
@@ -396,6 +422,7 @@ dancevis.Shapes.ShapeTypeId.toString = function(typeId) {
 
 }
 dancevis.Shapes.ShapeTypeId.isValidShapeType = function(shapeTypeId) {
+
 	var validShape = false;
 	for (var p in dancevis.Shapes.ShapeTypeId) {
 		if (dancevis.Shapes.ShapeTypeId[p] == shapeTypeId) {
@@ -493,11 +520,12 @@ dancevis.Shapes.Line.prototype.distanceToLine = function() {
      
 }
 
-dancevis.Shapes.Line.prototype.isOnShape = function(position) {
+dancevis.Shapes.Line.prototype.isOnShape = function(position, err) {
+	err = err || .001;
    var endPoint = this.endPosition();
    var a = (endPoint.y - this.start_position.y) / (endPoint.x - this.start_position.x);
    var b = this.start_position.y - a * this.start_position.x;
-   if ( Math.abs(position.y - (a*position.x+b)) < .001){
+   if ( Math.abs(position.y - (a*position.x+b)) < err){
 	  return true;
       if(position.x >= this.start_position.x && position.x <= endPoint.x){
 	       return true;
@@ -646,17 +674,21 @@ dancevis.Shapes.Circle.prototype.startAngle = function() {
 dancevis.Shapes.Circle.prototype.stopAngle = function() {
 	return this.stopAngle;
 }
-dancevis.Shapes.Circle.prototype.isOnShape = function(position) {
+dancevis.Shapes.Circle.prototype.isOnShape = function(position, err) {
 	if (!position || position.__type != dancevis.Position.__type)
 		throw new dancevis.Error.DanceVisError("wrong type supplied");
+
+	err = err || 2;
+
 	var distFromCenter = this.center.distance(position);
-	if (!dancevis.Util.floatsEqual(distFromCenter, this.radius))
+	if ((distFromCenter - this.radius) > err) {
 		return false;
+	}
 	var positionAngle = this.angleFromPosition(position);
 	var stopIsBigger = this.startAngle.inRadians() < this.stopAngle.inRadians();
 	var big = stopIsBigger ? this.stopAngle : this.startAngle;
 	var small = stopIsBigger ? this.startAngle : this.stopAngle;
-	if (positionAngle.inRadians() < small.inRadians() || positionAngle.inRadians() > big.inRadians()) {
+	if (!positionAngle.isBetween(this.startAngle, this.stopAngle)) {
 		return false;
 	}
 	return true;
@@ -708,46 +740,45 @@ dancevis.Shapes.Point.prototype.isOnShape = function(position) {
 
 
 //*** class Shapes.Grid
-dancevis.Shapes.Grid = function(gridOptions) {
+dancevis.Shapes.Grid = function(numRows, numCols, width, height, center) {
 	this.positionBounds = null;
 	this.__type = dancevis.Shapes.Grid.__type;
+	this.numRows = numRows;
+	this.numCols = numCols;
+	this.width = width;
+	this.height = height;
+	this.center = center;
+	var upperLeftX = center.x - width/2;
+	var upperLeftY = center.y - height/2;
+	this.upperLeft = new dancevis.Position(upperLeftX, upperLeftY);
+	this.cellWidth = width / numCols;
+	this.cellHeight = height / numRows;
 }
 // Static Variables for class Shapes.Grid
 dancevis.Shapes.Grid.__type = "grid";
 // Methods for class Shapes.Grid
-dancevis.Shapes.Grid.prototype.startPosition = function() {
 
-}
-dancevis.Shapes.Grid.prototype.endPosition = function() {
-
-}
-dancevis.Shapes.Grid.prototype.nextPosition = function(startPosition, dt, speed) {
-
+dancevis.Shapes.Grid.prototype.nextPositionAndOrientation = function(startPosition, dt, speed, startOrientation) {
+ return startPosition;
 }
 dancevis.Shapes.Grid.prototype.positionAt = function(row, col) {
-
+   if(row >= this.numRows || row < 0) throw new dancevis.Error.DanceVisError("row is outside grid bounds");
+   if(col >= this.numCols || col < 0) throw new dancevis.Error.DanceVisError("col is outside grid bounds");
+   var x = this.upperLeft.x + col * this.cellWidth;
+   var y = this.upperLeft.y + row * this.cellHeight;
+   return new dancevis.Position(x,y);
 }
 dancevis.Shapes.Grid.prototype.numRows = function() {
-
+   return this.numRows;
 }
 dancevis.Shapes.Grid.prototype.numCols = function() {
-
+   return this.numCols;
 }
-dancevis.Shapes.Grid.prototype.angle = function() {
 
-}
 dancevis.Shapes.Grid.prototype.setCenter = function(center) {
-
+   this.center = center;
 }
-dancevis.Shapes.Grid.prototype.setGridSpacing = function(spacing) {
 
-}
-dancevis.Shapes.Grid.prototype.gridSpacing = function() {
-
-}
-dancevis.Shapes.Grid.prototype.setOptions = function(gridOptions) {
-
-}
 dancevis.Shapes.Grid.prototype.isOnShape = function(position) {
 
 }
@@ -1024,9 +1055,15 @@ dancevis.Group.prototype.addExitPoint = function(groupEPObj) {
 		if (!groupEPObj.endTime || groupEPObj.endTime.__type != dancevis.Time.__type) 
 			throw new dancevis.Error.DanceVisError("endTime is not of type time");		
 	}
-	
-	if (!groupEPObj.nextGroup.shape.isOnShape(groupEPObj.position))
-		throw new dancevis.Error.DanceVisError("exit position is not on the next group's shape")
+	if (!this.shape.isOnShape(groupEPObj.position, 3))
+		throw new dancevis.Error.DanceVisError("position is not on the this group's shape");
+
+	if (!groupEPObj.nextGroup.shape.isOnShape(groupEPObj.position, 3))
+		throw new dancevis.Error.DanceVisError("exit position is not on the next group's shape");
+
+	groupEPObj.element = null;
+	if (groupEPObj.showOnScreen)
+		groupEPObj.element = dancevis.Util.makeSVGCircle(groupEPObj.position.screenCoords(), 5, "blue", false);
 
 	var name = groupEPObj.name || groupEPObj.position.toString();
 	this.exitPoints[name] = groupEPObj;
@@ -1037,7 +1074,11 @@ dancevis.Group.prototype.removeChildByIndex = function(index) {
 	}
 	if (index > this.children.length)
 		return;
-	this.children.splice(index, 1);
+
+	var child = this.children.splice(index, 1);
+	if (this.endAction) {
+		this.endAction.call(this, child, index);
+	}
 }
 dancevis.Group.prototype.setOptions = function(options) {
 
@@ -1122,7 +1163,7 @@ dancevis.Dancer = function(dancerOptions) {
 
 	this.dancerTypeId = dancevis.Util.defaultTo(dancerOptions.dancerTypeId, dancevis.DancerTypeId.FOLLOW);
 	this.dancerShape = dancevis.Util.defaultTo(dancerOptions.dancerShape, dancevis.DancerShape.CIRCLE);
-	this.dancerSize = dancevis.Util.defaultTo(dancerOptions.dancerSize, dancevis.DancerShapeSize.SMALL);
+	this.dancerSize = dancevis.Util.defaultTo(dancerOptions.dancerSize, dancevis.DancerShapeSize.MEDIUM);
 	this.dancerName = dancevis.Util.defaultTo(dancerOptions.dancerName, "");
 	this.dancerColor = dancevis.Util.defaultTo(dancerOptions.dancerColor, "black");
 	this.position = dancevis.Util.defaultTo(dancerOptions.position, new dancevis.Position(0,0));
@@ -1130,42 +1171,8 @@ dancevis.Dancer = function(dancerOptions) {
 
 	this.dancerId = dancevis.Dancer.__idUnique();
 	this.groupId = dancevis.Group.__groupIdUnique();
-	//this.parent = 
 <<<<<<< HEAD
-
-
-	if (this.dancerShape == dancevis.DancerShape.CIRCLE){
-		this.element = d3.select("g").append("svg:circle")
-						.attr("r", 2)
-						.attr("cx", this.position.x)
-						.attr("cy", this.position.y)
-						.attr("fill", this.dancerColor)
-						.attr("stroke", this.dancerColor)
-						//.attr("transform", "translate("+ this.position.x +"," + this.position.y + ")");
-	}
-	if (this.dancerShape == dancevis.DancerShape.SQUARE){
-		this.element = d3.select("g").append("svg:rect")
-						.attr("width", 2)
-						.attr("height", 2)
-						.attr("x", this.position.x)
-						.attr("y", this.position.y)
-						.attr("fill", this.dancerColor)
-						.attr("stroke", this.dancerColor)
-						//.attr("transform", "translate("+ this.position.x +"," + this.position.y + ")");
-	}
-	if (this.dancerShape == dancevis.DancerShape.TRIANGLE){
-		var top = new dancevis.Position(this.position.x, this.position.y - 20);
-		var left = new dancevis.Position(this.position.x - 20, this.position.y + 10);
-		var right = new dancevis.Position(this.position.x + 20, this.position.y + 10);
-		var points = (top + " " + left + " " + right).replace(/\(/g, "").replace(/\)/g, "");
-		console.log(points);
-		this.element = d3.select("g").append("svg:polygon")
-						.attr("points", points)
-						.attr("fill", this.dancerColor)
-						.attr("stroke", this.dancerColor)
-						.attr("transform", "translate("+ this.position.x +"," + this.position.y + ")");
-	}
-=======
+	//this.parent = 
 	
 	/*
 	var selection = d3.select("g").append("svg:circle")
@@ -1177,21 +1184,15 @@ dancevis.Dancer = function(dancerOptions) {
 	this.element = selection[0][0];
 	*/
 
-	var svg = document.getElementsByTagName("svg")[0];
-	var g = svg.firstChild;
-	var svgElement = document.createElementNS("http://www.w3.org/2000/svg", "circle")
+	var radius = 7;
+	if (this.dancerShape == dancevis.DancerShapeSize.SMALL) radius = 5;
+=======
 
-	svgElement.style.fill = this.dancerColor;
-	svgElement.r.baseVal.value = 5;
-	svgElement.cx.baseVal.value = this.position.x;
-	svgElement.cy.baseVal.value = this.position.y;
-	g.appendChild(svgElement);
-	this.element = svgElement;
-	
-	//this.element = document.getElementById("divvy");
->>>>>>> bbebf405e40b3008dab6b0d9c0fc01a93cb3a928
-	//don't have dancerId, parent, element
-
+	var radius = 7;
+	if (this.dancerShape == dancevis.DancerShapeSize.SMALL) radius = 6;
+>>>>>>> master
+	else if (this.dancerShape == dancevis.DancerShapeSize.LARGE) radius = 8;
+	this.element = dancevis.Util.makeSVGCircle(this.position, radius, this.dancerColor, false);
 }
 // Static Variables for class Dancer
 dancevis.Dancer.__type = "dancer";
@@ -1233,6 +1234,7 @@ dancevis.Dancer.prototype.setMyPositionAndModifyChildren = function(position, ne
 
 
 
+<<<<<<< HEAD
 // Setup
 dancevis.Position.screenOriginIs(400, 200);
 var origin = new dancevis.Position(0, 0)
@@ -1260,13 +1262,13 @@ var outer = new dancevis.Group({
 // Outer2 group
 var outer2 = new dancevis.Group({
 					shape: outercircle,
-					startTime: new dancevis.Time({seconds:3}),
+					startTime: new dancevis.Time({seconds:0}),
 					endTime: new dancevis.Time({seconds:30}),
 					speed: new dancevis.Speed({speed:70}),
 					position: bottom1,
 					orientation: new dancevis.Orientation(0)
 				});
-outer2.showShapeOnScreen(false);
+//outer2.showShapeOnScreen(false);
 
 
 // Inner1 group
@@ -1336,12 +1338,24 @@ var horizontal_line = new dancevis.Shapes.Line(line_start_pos, 300, new dancevis
 var line1 = new dancevis.Group({
 					shape: horizontal_line,
 					startTime: new dancevis.Time({seconds:0}),
-					endTime: new dancevis.Time({seconds:6}),
+					endTime: new dancevis.Time({seconds:8}),
 					position: horizontal_line.startPosition(),
 					speed: new dancevis.Speed({speed:70}),
 					orientation: new dancevis.Orientation(0)
 				});
-line1.showShapeOnScreen(true);
+//line1.showShapeOnScreen(true);
+
+// line2 group
+var vertical_line = new dancevis.Shapes.Line(new dancevis.Position(-150,140), 300, new dancevis.Orientation(-90, false));
+var line2 = new dancevis.Group({
+					shape: vertical_line,
+					startTime: new dancevis.Time({seconds:0}),
+					endTime: new dancevis.Time({seconds:8}),
+					position: vertical_line.startPosition(),
+					speed: new dancevis.Speed({speed:70}),
+					orientation: new dancevis.Orientation(-90)
+				});
+//line2.showShapeOnScreen(true);
 
 
 // Inner6 group
@@ -1358,16 +1372,37 @@ var inner6 = new dancevis.Group({
 
 
 
-
-
 // Outer 
+outer.addExitPoint({
+	startTime: dancevis.Time.now(),
+	endTime: line1.endTime,
+	position: line1.shape.startPosition(),
+	nextGroup: line1,
+	showOnScreen: true,
+	name: "to_line1"
+});
+
+
 outer.addExitPoint({
 	startTime: null,
 	endTime: null,
-	position: line1.shape.startPosition(),
-	nextGroup: line1,
-	name: "to_line"
-})
+	position: outer2.shape.positionAtAngle(new dancevis.Orientation(320, false)),
+	nextGroup: outer2,
+	showOnScreen: true,
+	name: "to_outer2"
+});
+
+
+outer2.addExitPoint({
+	startTime: null,
+	endTime: null,
+	position: outer2.shape.positionAtAngle(new dancevis.Orientation(80, false)),
+	nextGroup: outer,
+	showOnScreen: true,
+	name: "to_outer"
+});
+
+
 outer.setBeginAction(function(child, index) {
 	//console.log(child.position());
 	//console.log(new dancevis.Time());
@@ -1395,13 +1430,17 @@ inner3.setUpdateFunction("forever_stop", null, null, function() {
 line1.setEndCondition(function(child, index) {
 	var dist_between = this.shape.length / 4;
 	var endPos = this.shape.endPosition();
+	var startPos = this.shape.startPosition();
+
+	var dist_to_end = child.getPosition().distance(endPos);
+	var dist_to_start = child.getPosition().distance(startPos);
+
 	if (index == 0) {
-		return child.getPosition().equals(endPos);
+		return (dist_to_start >= this.shape.length);
 	}
 
 	var child_before_me = this.children[index -1];
 	var my_dist = child.getPosition().distance(child_before_me.getPosition());
-	console.log(my_dist+" <= "+dist_between);
 	if (my_dist <= dist_between) return true;
 
 	return false;
@@ -1415,13 +1454,38 @@ var pos4 = origin.positionInDirection(200, new dancevis.Orientation(0, false));
 var pos5 = origin.positionInDirection(200, new dancevis.Orientation(0, false));
 var pos6 = origin.positionInDirection(200, new dancevis.Orientation(0, false));
 
-var dancer1 = new dancevis.Dancer({position:pos1});
-var dancer2 = new dancevis.Dancer({position:pos2});
-var dancer3 = new dancevis.Dancer({position:pos3});
-var dancer4 = new dancevis.Dancer({position:pos4});
-var dancer5 = new dancevis.Dancer({position:pos5});
-var dancer6 = new dancevis.Dancer({position:pos6});
-var dancerWild = new dancevis.Dancer({position: new dancevis.Position(300, 300)});
+var dancer1 = new dancevis.Dancer({
+	position: pos1,
+	dancerColor: "steelblue"
+});
+var dancer2 = new dancevis.Dancer({
+	position: pos2,
+	dancerColor: "steelblue"
+});
+var dancer3 = new dancevis.Dancer({
+	position: pos3,
+	dancerColor: "steelblue"
+});
+var dancer4 = new dancevis.Dancer({
+	position: pos4,
+	dancerColor: "steelblue"
+});
+var dancer5 = new dancevis.Dancer({
+	position: pos5,
+	dancerColor: "steelblue"
+});
+var dancer6 = new dancevis.Dancer({
+	position:pos6,
+	dancerColor: "steelblue"
+});
+var dancerWild = new dancevis.Dancer({
+	position: new dancevis.Position(300, 300),
+	dancerColor: "steelblue"
+});
+
+//var dancer7 = new dancevis.Dancer({position:pos4});
+//var dancer8 = new dancevis.Dancer({position:pos5});
+//var dancer9 = new dancevis.Dancer({position:pos6});
 
 // 1, 3, 4, 5, 6 each get one dancer
 inner1.insertChild(dancer1);
@@ -1444,10 +1508,68 @@ var interval = setInterval(function() {
 	/*if (sec > 3 && sec < 5) {
 		inner1.setParent(outer2);
 		inner2.setParent(outer2);
+=======
+
+
+
+
+
+
+
+
+
+
+function DrawBackground(left, top){
+	var g = d3.select("g").append("g")
+				.attr("class", "lines")
+	var i = left, 
+		k = left;
+	var j = top,
+		m = top;
+
+	var w = document.body.offsetWidth;
+	var h = document.body.offsetHeight;
+
+	var color = "rgb(212,230,242)";
+	var boxsize = 36;
+
+	var originline = g.append("svg:line")
+		    .attr("x1", left)
+		    .attr("y1", 0)
+		    .attr("x2", left)
+		    .attr("y2", h)
+		    .style("stroke", color)
+			.style("stroke-width","2px");
+	var originline = g.append("svg:line")
+		    .attr("x1", 0)
+		    .attr("y1", top)
+		    .attr("x2", w)
+		    .attr("y2", top)
+		    .style("stroke", color)
+			.style("stroke-width","2px");
+
+	while(i > 0){
+		var myLine = g.append("svg:line")
+		    .attr("x1", i)
+		    .attr("y1", 0)
+		    .attr("x2", i)
+		    .attr("y2", h)
+		    .style("stroke", color)
+			.style("stroke-width","0.75px");
+			i -= boxsize;
+>>>>>>> master
 	}
-	else if (sec >5) {
-		inner1.setParent(outer);
+	while(j > 0){
+		var myLine = g.append("svg:line")
+		    .attr("x1", 0)
+		    .attr("y1", j)
+		    .attr("x2", w)
+		    .attr("y2", j)
+		    .style("stroke", color)
+			.style("stroke-width","0.75px");
+			j -= boxsize;
 	}
+<<<<<<< HEAD
 	*/
 
 	//console.log("\n");
@@ -1455,16 +1577,35 @@ var interval = setInterval(function() {
 	//console.log(inner5.getOrientation());
 	//console.log(inner6.getOrientation());
 
-	//outer2.timeIs(time);
+	outer2.timeIs(time);
 	line1.timeIs(time);
 }, nMili);
 
 
 setTimeout(function() {
 	clearInterval(interval);
-}, 10000);
+}, 13000);
+
+var g = new dancevis.Shapes.Grid(3, 3, 90, 60, new dancevis.Position(200,200));
 
 
+var pos1 = g.positionAt(0,0);
+console.log(pos1);
+
+for(var i = 0; i < 4; i++){
+  for(var j = 0; j < 3; j++){
+     var pos = g.positionAt(i,j);
+	 var d = new dancevis.Dancer({ position: pos, dancerColor: "red"});
+  }
+}
+/*var pos2 = g.positionAt(0,1);
+var pos3 = g.positionAt(0,2);
+var pos4 = g.positionAt(1,0);
+var d1 = new dancevis.Dancer({ position: pos1, dancerColor: "red"});
+var d2 = new dancevis.Dancer({ position: pos2, dancerColor: "red"});
+var d3 = new dancevis.Dancer({ position: pos3, dancerColor: "red"});
+var d4 = new dancevis.Dancer({ position: pos4, dancerColor: "red"});
+*/
 /*
 var div = document.getElementById("divvy");
 var divPos = new dancevis.Position(div.offsetLeft, div.offsetTop);
@@ -1484,6 +1625,32 @@ setTimeout(function() {
 	clearInterval(interval);
 }, 7000);
 */
+=======
+	while(k < w){
+		var myLine = g.append("svg:line")
+		    .attr("x1", k)
+		    .attr("y1", 0)
+		    .attr("x2", k)
+		    .attr("y2", h)
+		    .style("stroke", color)
+			.style("stroke-width","0.75px");
+			k += boxsize;
+	}
+	while(m < h){
+		var myLine = g.append("svg:line")
+		    .attr("x1", 0)
+		    .attr("y1", m)
+		    .attr("x2", w)
+		    .attr("y2", m)
+		    .style("stroke", color)
+			.style("stroke-width","0.75px");
+			m += boxsize;
+	}
+}
+
+
+
+>>>>>>> master
 
 
 
