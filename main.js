@@ -1274,23 +1274,66 @@ dancevis.TimeManager = function() {
 	this.veryFirstTime = true;
 	this.reachedEnd = false;
 	this.timerDiv = null;
+	this.annotations = [];
+	this.annotationPosition = new dancevis.Position(400, 100);
 }
 dancevis.TimeManager.prototype.timer = function(position) {
-	if (!this.timerDiv)
+	if (!this.timerDiv) {
 		this.timerDiv = document.createElement("div");
-	this.timerDiv.className = "timerDiv";
-	this.timerDiv.innerHTML = "00:00:00";
+		this.timerDiv.className = "timerDiv";
+		this.timerDiv.innerHTML = "00:00:00";
+		document.body.appendChild(this.timerDiv);
+	}
+	else this.timerDiv.parentNode.removeChild(this.timerDiv);
 
 	var screenCoords = position.screenCoords();
-	this.timerDiv.style.left = screenCoords.x + "px";
-	this.timerDiv.style.top = screenCoords.y + "px";
-	document.body.appendChild(this.timerDiv);
+	this.timerDiv.style.left = screenCoords.x - (this.timerDiv.offsetWidth / 2) + "px";
+	this.timerDiv.style.top = screenCoords.y - (this.timerDiv.offsetHeight / 2) + "px";
+	
 	return this;
 }
 dancevis.TimeManager.prototype.scheduleGroup = function(group) {
 	if (!group || group.__type != dancevis.Group.__type)
 		throw new dancevis.Error.DanceVisError("group is not of type group");
+
 	this.groups.push(group);
+	return this;
+}
+dancevis.TimeManager.prototype.annotateAt = function(position) {
+	if (!position || position.__type != dancevis.Position.__type)
+		throw new dancevis.Error.DanceVisError("invalid position for annotations");
+
+	this.annotationPosition = position;
+	return this;
+}
+dancevis.TimeManager.prototype.annotate = function(str, startTime, endTime) {
+	if (!startTime || startTime.__type != dancevis.Time.__type)
+		throw new dancevis.Error.DanceVisError("invalid startTime for annotation");
+
+	if (!endTime || endTime.__type != dancevis.Time.__type) 
+		throw new dancevis.Error.DanceVisError("invalid endTime for annotation");
+
+	if (!this.annotationDiv) {
+		this.annotationDiv = document.createElement("div");
+		this.annotationDiv.className = "annotationDiv";
+
+		var screenCoords = this.annotationPosition.screenCoords();
+		this.annotationDiv.style.left = screenCoords.x + "px";
+		this.annotationDiv.style.top = screenCoords.y + "px";
+		document.body.appendChild(this.annotationDiv);
+	}
+
+	var obj = {
+		annotation: str,
+		startTime: startTime,
+		endTime: endTime,
+		element: document.createElement("p"),
+		shown: false
+	}
+	obj.element.innerHTML = str;
+
+	this.annotations.push(obj);
+
 	return this;
 }
 dancevis.TimeManager.prototype.formatedTimeStr = function(currentTime) {
@@ -1316,6 +1359,20 @@ dancevis.TimeManager.prototype.onTimeStep = function() {
 		if (time.isBetween(this.groups[i].startTime, this.groups[i].endTime))
 			stopUpdate = false;
 	}
+	for (var i = 0; i < this.annotations.length; i++) {
+		var obj = this.annotations[i];
+		var validTime = time.isBetween(this.annotations[i].startTime, this.annotations[i].endTime);
+		if (!obj.shown && validTime) {
+			this.annotationDiv.appendChild(obj.element);
+			obj.shown = true;
+		}
+		else if (obj.shown && !validTime) {
+			obj.element.parentNode.removeChild(obj.element);
+			obj.shown = false;
+			//this.annotations.splice(i, 1);
+		}
+	}
+
 	if (stopUpdate) {
 		this.reachedEnd = true;
 		this.pause();
@@ -1324,6 +1381,7 @@ dancevis.TimeManager.prototype.onTimeStep = function() {
 		var frmtime = this.formatedTimeStr(time);
 		this.timerDiv.innerHTML = frmtime;
 	}
+	this.currentTime = time;
 }
 
 dancevis.TimeManager.prototype.play = function() {

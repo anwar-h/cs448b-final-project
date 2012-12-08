@@ -2,10 +2,8 @@
 <head>
 	<title>Anwar's Orientation</title>
 </head>
-
-<body style="margin: 0px; padding: 0px;">
-<script type="text/javascript" src="http://mbostock.github.com/d3/d3.js?1.27.2"></script>
-
+<body>
+	
 <script src="../dancevis.js"></script>
 <script type="text/javascript">
 
@@ -172,11 +170,19 @@ outer.setUpdateFunction("short_stop",
 	function() {
 		this.updateChildren = false;
 	});
+
+tmanager.annotateAt(new dancevis.Position(200,0))
+	.annotate("Notice the short stop here!",
+	new dancevis.Time({milliseconds:500}), new dancevis.Time({seconds:3.5}))
+	
+	.annotate("The red dancer is Billy <br />- he has red hair.",
+	new dancevis.Time({seconds:1}), new dancevis.Time({seconds:4}));
+
 outer.setUpdateFunction("forever_stop",
 	null,
 	null,
 	function() {
-		this.updateChildren = true;
+		//this.updateChildren = true;
 	});
 
 inner1.setUpdateFunction("forever_stop",
@@ -253,7 +259,7 @@ tmanager.scheduleGroup(outer)
 		.scheduleGroup(outer2)
 		.scheduleGroup(line1)
 		.scheduleGroup(line2)
-		.timer(new dancevis.Position(250, 20))
+		.timer(new dancevis.Position(0, 160))
 		.play();
 
 </script>
