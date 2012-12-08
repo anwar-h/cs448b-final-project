@@ -297,6 +297,34 @@ dancevis.Time.prototype.inMinutes = function() {
 dancevis.Time.prototype.inHours = function() {
 	return this.milliseconds / (1000.0 * 60.0 * 60.0);
 }
+dancevis.Time.prototype.inTimeUnits = function() {
+	var millisecondsRemaining = this.milliseconds;
+	var millisecondsPerSecond = (1000.0);
+	var millisecondsPerMinute = (millisecondsPerSecond * 60.0);
+
+
+	var minutes = 0,
+		seconds = 0,
+		milliseconds = 0;
+
+	minutes = Math.floor(millisecondsRemaining / millisecondsPerMinute);
+	millisecondsRemaining -= minutes * millisecondsPerMinute;
+
+	if (millisecondsRemaining > 0) {
+		seconds = Math.floor(millisecondsRemaining / millisecondsPerSecond)
+		millisecondsRemaining -= seconds * millisecondsPerSecond;
+	}
+
+	if (millisecondsRemaining > 0) {
+		milliseconds = millisecondsRemaining;
+	}
+
+	return {
+		minutes: minutes,
+		seconds: seconds,
+		milliseconds: milliseconds
+	}
+}
 dancevis.Time.prototype.isBetween = function(time1, time2) {
 	var milli1 = time1.inMilliseconds();
 	var milli2 = time2.inMilliseconds();
@@ -1237,6 +1265,88 @@ dancevis.Dancer.prototype.setMyPositionAndModifyChildren = function(position, ne
 		this.element.style.top = position.y;
 	}
 }
+
+dancevis.TimeManager = function() {
+	this.numMillisecondsPerInterval = 10;
+	this.intervalId = null;
+	this.groups = [];
+	this.currentTime = null;
+	this.veryFirstTime = true;
+	this.reachedEnd = false;
+	this.timerDiv = null;
+}
+dancevis.TimeManager.prototype.timer = function(position) {
+	if (!this.timerDiv)
+		this.timerDiv = document.createElement("div");
+	this.timerDiv.className = "timerDiv";
+	this.timerDiv.innerHTML = "00:00:00";
+
+	var screenCoords = position.screenCoords();
+	this.timerDiv.style.left = screenCoords.x + "px";
+	this.timerDiv.style.top = screenCoords.y + "px";
+	document.body.appendChild(this.timerDiv);
+	return this;
+}
+dancevis.TimeManager.prototype.scheduleGroup = function(group) {
+	if (!group || group.__type != dancevis.Group.__type)
+		throw new dancevis.Error.DanceVisError("group is not of type group");
+	this.groups.push(group);
+	return this;
+}
+dancevis.TimeManager.prototype.formatedTimeStr = function(currentTime) {
+	var toLength = function(num, x) {
+		var str = num + "";
+		var len = str.length;
+		if (len >= x) return str;
+
+		str = "";
+		for (var i = 0; i < x - len; i++) str += "0";
+		return str + num;
+	}
+
+	var tunits = currentTime.inTimeUnits();
+	return toLength(tunits.minutes, 2) + ":" + toLength(tunits.seconds, 2) + ":" + toLength(Math.floor(tunits.milliseconds / 10), 2);	
+}
+dancevis.TimeManager.prototype.onTimeStep = function() {
+	var time = dancevis.Time.now();
+
+	var stopUpdate = true;
+	for (var i = 0; i < this.groups.length; i++) {
+		this.groups[i].timeIs(time);
+		if (time.isBetween(this.groups[i].startTime, this.groups[i].endTime))
+			stopUpdate = false;
+	}
+	if (stopUpdate) {
+		this.reachedEnd = true;
+		this.pause();
+	}
+	else if (this.timerDiv) {
+		var frmtime = this.formatedTimeStr(time);
+		this.timerDiv.innerHTML = frmtime;
+	}
+}
+
+dancevis.TimeManager.prototype.play = function() {
+	if (this.reachedEnd) return;
+
+	if (this.veryFirstTime) {
+		dancevis.Time.zeroTimeIsNow();
+		this.veryFirstTime = false;
+	}
+	
+	if (this.intervalId !== null) this.pause();
+
+	var obj = this;
+	this.intervalId = setInterval(function() { obj.onTimeStep(); }, this.numMillisecondsPerInterval);
+}
+dancevis.TimeManager.prototype.pause = function() {
+	clearInterval(this.intervalId);
+	this.intervalId = null;
+}
+dancevis.TimeManager.prototype.skipBack = function() {
+
+}
+
 
 
 function DrawBackground(left, top){

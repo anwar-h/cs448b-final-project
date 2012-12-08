@@ -1,21 +1,20 @@
 <html>
 <head>
-	<title>Anwar's Sample</title>
+	<title>Anwar's Orientation</title>
 </head>
 
 <body style="margin: 0px; padding: 0px;">
 <script type="text/javascript" src="http://mbostock.github.com/d3/d3.js?1.27.2"></script>
 
-<script src="../main.js"></script>
+<script src="../dancevis.js"></script>
 <script type="text/javascript">
 
 // Setup
 dancevis.Position.screenOriginIs(400, 200);
 var origin = new dancevis.Position(0, 0)
-dancevis.Time.zeroTimeIsNow();
-
+var tmanager = new dancevis.TimeManager();
 var outercircle = new dancevis.Shapes.Circle(origin, 100);
-var innercircle = new dancevis.Shapes.Circle(origin, 20);
+var innercircle = new dancevis.Shapes.Circle(origin, 10);
 
 var bottom1 = outercircle.positionAtAngle(new dancevis.Orientation(200, false));
 var bottomAngle = outercircle.angleFromPosition(bottom1);
@@ -26,7 +25,7 @@ dancevis.Util.makeSVGCircle(bottom1.screenCoords(), 10, "green");
 var outer = new dancevis.Group({
 					shape: outercircle,
 					startTime: dancevis.Time.now(),
-					endTime: new dancevis.Time({seconds:20}),
+					endTime: new dancevis.Time({seconds:30}),
 					speed: new dancevis.Speed({speed:70}),
 					position: outercircle.center,
 					orientation: new dancevis.Orientation(0)
@@ -108,11 +107,11 @@ var inner6 = new dancevis.Group({
 
 // line1 group
 var line_start_pos = outercircle.positionAtAngle(new dancevis.Orientation(30, false));
-var horizontal_line = new dancevis.Shapes.Line(line_start_pos, 300, new dancevis.Orientation(0));
+var horizontal_line = new dancevis.Shapes.Line(line_start_pos, 200, new dancevis.Orientation(0));
 var line1 = new dancevis.Group({
 					shape: horizontal_line,
 					startTime: new dancevis.Time.now(),
-					endTime: new dancevis.Time({seconds:9}),
+					endTime: new dancevis.Time({seconds:10}),
 					position: horizontal_line.startPosition(),
 					speed: new dancevis.Speed({speed:70}),
 					orientation: new dancevis.Orientation(0)
@@ -250,19 +249,12 @@ inner6.insertChild(dancer6);
 inner2.insertChild(dancer2);
 inner2.insertChild(dancerWild);
 
-
-var nMili = 10;
-var interval = setInterval(function() {
-	var time = dancevis.Time.now();
-	outer.timeIs(time);	
-	outer2.timeIs(time);
-	line1.timeIs(time);
-}, nMili);
-
-
-setTimeout(function() {
-	clearInterval(interval);
-}, 13000);
+tmanager.scheduleGroup(outer)
+		.scheduleGroup(outer2)
+		.scheduleGroup(line1)
+		.scheduleGroup(line2)
+		.timer(new dancevis.Position(250, 20))
+		.play();
 
 </script>
 </body>
