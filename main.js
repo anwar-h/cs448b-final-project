@@ -1078,7 +1078,7 @@ dancevis.Group.prototype.insertChild = function(child, index) {
 }
 dancevis.Group.prototype.removeChildById = function(groupId) {
 	for (var i = 0; i < this.children.length; i++) {
-		if (this.children[i].__type == dancevis.Group.__type && this.children[i].groupId == groupId) {
+		if (this.children[i].groupId == groupId) {
 			this.removeChildByIndex(i);
 			break;
 		}
@@ -1204,7 +1204,7 @@ dancevis.Dancer = function(dancerOptions) {
 	this.dancerShape = null;
 	this.dancerSize = null;
 	this.dancerName = null;
-	this.parent = null;
+	this.parentGroup = null;
 	this.dancerColor = null;
 	this.position = null;
 	this.orientation = null;
@@ -1245,6 +1245,16 @@ dancevis.Dancer.prototype.getOrientation = function() {
 }
 dancevis.Dancer.prototype.setOrientation = function(orientation) {
 	this.orientation = orientation;
+}
+dancevis.Dancer.prototype.setParent = function(parent) {
+	if (!parent || parent.__type != dancevis.Group.__type) {
+		throw new dancevis.Error.DanceVisError("trying to set a parent that is not a group");
+	}
+	if (this.parentGroup) {
+		this.parentGroup.removeChildById(this.groupId);
+	}
+	this.parentGroup = parent;
+	this.parentGroup.insertChild(this);
 }
 dancevis.Dancer.prototype.updateChildrenBasedOnMyShape = function(currentTime) {
 	//do nothing
