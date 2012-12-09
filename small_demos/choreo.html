@@ -26,6 +26,14 @@ var outer = new dancevis.Group({
 					orientation: new dancevis.Orientation(0)
 				});
 
+tmanager.annotateAt(new dancevis.Position(-300,100))
+	.annotate("Notice the short stop here!",
+	new dancevis.Time({seconds:3}), new dancevis.Time({seconds:5.5}))
+	
+	.annotate("Now they separate <br /> bitches!!!!",
+	new dancevis.Time({seconds:5}), new dancevis.Time({seconds:7}));
+
+
 var splitCouples = false;
 outer.setUpdateFunction("stop", new dancevis.Time({seconds:3}), new dancevis.Time({seconds:5}), function() {
 	this.updateChildren = false;
