@@ -26,21 +26,22 @@ var outer = new dancevis.Group({
 					orientation: new dancevis.Orientation(0)
 				});
 
+var outer2 = new dancevis.Group({
+					shape: outercircle,
+					startTime: dancevis.Time.now(),
+					endTime: new dancevis.Time({seconds:20}),
+					speed: new dancevis.Speed({speed:70}),
+					position: outercircle.center,
+					orientation: new dancevis.Orientation(0)
+				});
+
+
 tmanager.annotateAt(new dancevis.Position(-300,100))
 	.annotate("Notice the short stop here!",
 	new dancevis.Time({seconds:3}), new dancevis.Time({seconds:5.5}))
 	
 	.annotate("Now they separate <br /> bitches!!!!",
 	new dancevis.Time({seconds:5}), new dancevis.Time({seconds:7}));
-
-var outer2 = new dancevis.Group({
-					shape: outercircle,
-					startTime: new dancevis.Time({seconds:6}),
-					endTime: new dancevis.Time({seconds:20}),
-					speed: new dancevis.Speed({speed:70}),
-					position: outercircle.center,
-					orientation: new dancevis.Orientation(0)
-				});
 
 
 var splitCouples = false;
@@ -51,7 +52,7 @@ outer.setUpdateFunction("stop", new dancevis.Time({seconds:3}), new dancevis.Tim
 			var couple = this.children[i];
 			var couple2 = new dancevis.Group({
 				shape: innercircle,
-				startTime: outer2.startTime,
+				startTime: dancevis.Time.now(),
 				endTime: outer2.endTime,
 				speed: new dancevis.Speed({speed:50}),
 				parentGroup: outer2,
@@ -67,6 +68,7 @@ outer.setUpdateFunction("stop", new dancevis.Time({seconds:3}), new dancevis.Tim
 outer.setUpdateFunction("clockwise", new dancevis.Time({seconds:12}), outer.endTime, function() {
 	this.shape.clockwise = true;
 });
+
 
 for(var i = 0; i < 6; i++){
     var couple = new dancevis.Group({
