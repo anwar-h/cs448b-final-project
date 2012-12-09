@@ -621,10 +621,6 @@ dancevis.Shapes.Circle.prototype.getOrientation = function() {
 	return this.orientation;
 }
 dancevis.Shapes.Circle.prototype.setOrientation = function(orientation) {
-	if (this.element && this.svgGroup) {
-		var screenPos = this.center.screenCoords();
-		//this.svgGroup.setAttribute("transform", "rotate("+orientation.inDegrees()+" "+screenPos.x+" "+screenPos.y+")");
-	}
 	this.orientation = orientation;
 }
 dancevis.Shapes.Circle.prototype.getPosition = function() {
@@ -921,6 +917,7 @@ dancevis.Group = function(groupOptions) {
 	this.lastTime = this.startTime.copy();
 
 	if (groupOptions.position) this.setPosition(groupOptions.position.copy());
+	if (groupOptions.position === null) this.setPosition(new dancevis.Position(10000000000,10000000000));
 	this.setOrientation(groupOptions.orientation.copy());
 
 	this.clientUpdateFunctions = {};
@@ -1055,7 +1052,7 @@ dancevis.Group.prototype.insertChild = function(child, index) {
 	index = dancevis.Util.defaultNum(index, this.children.length);
 
 	if (this.shape.__type == dancevis.Shapes.Circle.__type) {
-		var childPos = this.shape.isOnShape(child.getPosition(), 2) ? child.getPosition() : null;
+		var childPos = (child.getPosition() && this.shape.isOnShape(child.getPosition(), 2)) ? child.getPosition() : null;
 		var childOri = childPos === null ? child.getOrientation() : null;
 	}
 	else {
@@ -1083,6 +1080,22 @@ dancevis.Group.prototype.removeChildById = function(groupId) {
 			break;
 		}
 	}
+}
+dancevis.Group.prototype.onmouseover = function(evt) {
+	this.popup = document.createElement("div");
+	var table = document.createElement("table");
+	var row1 = "<tr><th>"+this.dancerName+"</th></tr>";
+	var row2 = "<tr><td class='value'>"+this.getPosition().toString()+"</td></tr>";
+	var row3 = "<tr><td class='value'>"+this.getOrientation().inDegrees().toFixed(2)+" degrees</td></tr>";
+	table.innerHTML = row1 + row2 + row3;
+	this.popup.className = "popup";
+	this.popup.style.left = (evt.pageX + 5) + "px";
+	this.popup.style.top = (evt.pageY) + "px";
+	this.popup.appendChild(table);
+	document.body.appendChild(this.popup);
+}
+dancevis.Group.prototype.onmouseout = function(evt) {
+	document.body.removeChild(this.popup);
 }
 dancevis.Group.prototype.addExitPoint = function(groupEPObj) {
 	if (!groupEPObj)
@@ -1113,8 +1126,27 @@ dancevis.Group.prototype.addExitPoint = function(groupEPObj) {
 		throw new dancevis.Error.DanceVisError("endTime is earlier than startTime");
 
 	groupEPObj.element = null;
-	if (groupEPObj.showOnScreen)
+	if (groupEPObj.showOnScreen) {
 		groupEPObj.element = dancevis.Util.makeSVGCircle(groupEPObj.position.screenCoords(), 5, "blue", false);
+		groupEPObj.popup = null;
+		groupEPObj.element.onmouseover = function(evt) {
+			groupEPObj.popup = document.createElement("div");
+			var table = document.createElement("table");
+			var row1 = "<tr><th colspan='2'>Exit Point: '"+groupEPObj.name+"'</th></tr>";
+			var row2 = "<tr><td class='value'>"+groupEPObj.position.toString()+"</td><td class='label'>- Position</td></tr>";
+			var row3 = "<tr><td class='value'>"+dancevis.TimeManager.formatedTimeStr(groupEPObj.startTime)+"</td><td class='label'>- Start</td></tr>";
+			var row4 = "<tr><td class='value'>"+dancevis.TimeManager.formatedTimeStr(groupEPObj.endTime)+"</td><td class='label'>- End</td></tr>";
+			table.innerHTML = row1 + row2 + row3 + row4;
+			groupEPObj.popup.className = "popup";
+			groupEPObj.popup.style.left = (evt.pageX + 5) + "px";
+			groupEPObj.popup.style.top = (evt.pageY) + "px";
+			groupEPObj.popup.appendChild(table);
+			document.body.appendChild(groupEPObj.popup);
+		}
+		groupEPObj.element.onmouseout = function(evt) {
+			document.body.removeChild(groupEPObj.popup);
+		}
+	}
 
 	var name = groupEPObj.name || groupEPObj.position.toString();
 	this.exitPoints[name] = groupEPObj;
@@ -1215,7 +1247,7 @@ dancevis.Dancer = function(dancerOptions) {
 	this.dancerTypeId = dancevis.Util.defaultTo(dancerOptions.dancerTypeId, dancevis.DancerTypeId.FOLLOW);
 	this.dancerShape = dancevis.Util.defaultTo(dancerOptions.dancerShape, dancevis.DancerShape.CIRCLE);
 	this.dancerSize = dancevis.Util.defaultTo(dancerOptions.dancerSize, dancevis.DancerShapeSize.MEDIUM);
-	this.dancerName = dancevis.Util.defaultTo(dancerOptions.dancerName, "");
+	this.dancerName = dancevis.Util.defaultTo(dancerOptions.dancerName, "NO NAME");
 	this.dancerColor = dancevis.Util.defaultTo(dancerOptions.dancerColor, "black");
 	this.position = dancevis.Util.defaultTo(dancerOptions.position, new dancevis.Position(0,0));
 	this.orientation = dancevis.Util.defaultTo(dancerOptions.orientation, new dancevis.Orientation(0));
@@ -1227,6 +1259,10 @@ dancevis.Dancer = function(dancerOptions) {
 	if (this.dancerSize == dancevis.DancerShapeSize.SMALL) radius = 6;
 	else if (this.dancerSize == dancevis.DancerShapeSize.LARGE) radius = 10;
 	this.element = dancevis.Util.makeSVGCircle(this.position, radius, this.dancerColor, false);
+
+	var obj = this;
+	this.element.onmouseover = function(evt) { obj.onmouseover(evt); }
+	this.element.onmouseout = function(evt) { obj.onmouseout(evt); }
 }
 // Static Variables for class Dancer
 dancevis.Dancer.__type = "dancer";
@@ -1234,6 +1270,22 @@ dancevis.Dancer.__type = "dancer";
 dancevis.Dancer.__idUnique = dancevis.Util.counter(555, 1);
 
 // Methods for class Dancer
+dancevis.Dancer.prototype.onmouseover = function(evt) {
+	this.popup = document.createElement("div");
+	var table = document.createElement("table");
+	var row1 = "<tr><th colspan='2'>"+this.dancerName+"</th></tr>";
+	var row2 = "<tr><td class='value'>"+this.getPosition().toString()+"</td><td class='label'>- Position</td></tr>";
+	var row3 = "<tr><td class='value'>"+this.getOrientation().inDegrees().toFixed(2)+"</td><td class='label'>- Degrees</td></tr>";
+	table.innerHTML = row1 + row2 + row3;
+	this.popup.className = "popup";
+	this.popup.style.left = (evt.pageX + 5) + "px";
+	this.popup.style.top = (evt.pageY) + "px";
+	this.popup.appendChild(table);
+	document.body.appendChild(this.popup);
+}
+dancevis.Dancer.prototype.onmouseout = function(evt) {
+	document.body.removeChild(this.popup);
+}
 dancevis.Dancer.prototype.getPosition = function() {
 	return this.position;
 }
@@ -1276,6 +1328,7 @@ dancevis.Dancer.prototype.setMyPositionAndModifyChildren = function(position, ne
 	}
 }
 
+
 dancevis.TimeManager = function() {
 	this.numMillisecondsPerInterval = 10;
 	this.intervalId = null;
@@ -1287,6 +1340,21 @@ dancevis.TimeManager = function() {
 	this.annotations = [];
 	this.annotationPosition = new dancevis.Position(400, 100);
 }
+// Static Methods for class TimeManager
+dancevis.TimeManager.formatedTimeStr = function(currentTime) {
+	var toLength = function(num, x) {
+		var str = num + "";
+		var len = str.length;
+		if (len >= x) return str;
+
+		str = "";
+		for (var i = 0; i < x - len; i++) str += "0";
+		return str + num;
+	}
+	var tunits = currentTime.inTimeUnits();
+	return toLength(tunits.minutes, 2) + ":" + toLength(tunits.seconds, 2) + ":" + toLength(Math.floor(tunits.milliseconds / 10), 2);	
+}
+// Methods for class TimeManager
 dancevis.TimeManager.prototype.timer = function(position) {
 	if (!this.timerDiv) {
 		this.timerDiv = document.createElement("div");
@@ -1346,20 +1414,6 @@ dancevis.TimeManager.prototype.annotate = function(str, startTime, endTime) {
 
 	return this;
 }
-dancevis.TimeManager.prototype.formatedTimeStr = function(currentTime) {
-	var toLength = function(num, x) {
-		var str = num + "";
-		var len = str.length;
-		if (len >= x) return str;
-
-		str = "";
-		for (var i = 0; i < x - len; i++) str += "0";
-		return str + num;
-	}
-
-	var tunits = currentTime.inTimeUnits();
-	return toLength(tunits.minutes, 2) + ":" + toLength(tunits.seconds, 2) + ":" + toLength(Math.floor(tunits.milliseconds / 10), 2);	
-}
 dancevis.TimeManager.prototype.onTimeStep = function() {
 	var time = new dancevis.Time({milliseconds: (this.currentTime.inMilliseconds() + this.numMillisecondsPerInterval)});
 
@@ -1388,7 +1442,7 @@ dancevis.TimeManager.prototype.onTimeStep = function() {
 		this.pause();
 	}
 	else if (this.timerDiv) {
-		var frmtime = this.formatedTimeStr(time);
+		var frmtime = dancevis.TimeManager.formatedTimeStr(time);
 		this.timerDiv.innerHTML = frmtime;
 	}
 	this.currentTime = time;
