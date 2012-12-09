@@ -237,6 +237,8 @@ dancevis.Orientation.prototype.isBetween = function(angle1, angle2) {
 	if (!angle2 || angle2.__type != dancevis.Orientation.__type)
 		throw new dancevis.Error.DanceVisError("wrong type supplied");
 
+	
+
 	console.log("STILL NEED TO DO THIS");
 	return true;
 }
@@ -295,6 +297,34 @@ dancevis.Time.prototype.inMinutes = function() {
 dancevis.Time.prototype.inHours = function() {
 	return this.milliseconds / (1000.0 * 60.0 * 60.0);
 }
+dancevis.Time.prototype.inTimeUnits = function() {
+	var millisecondsRemaining = this.milliseconds;
+	var millisecondsPerSecond = (1000.0);
+	var millisecondsPerMinute = (millisecondsPerSecond * 60.0);
+
+
+	var minutes = 0,
+		seconds = 0,
+		milliseconds = 0;
+
+	minutes = Math.floor(millisecondsRemaining / millisecondsPerMinute);
+	millisecondsRemaining -= minutes * millisecondsPerMinute;
+
+	if (millisecondsRemaining > 0) {
+		seconds = Math.floor(millisecondsRemaining / millisecondsPerSecond)
+		millisecondsRemaining -= seconds * millisecondsPerSecond;
+	}
+
+	if (millisecondsRemaining > 0) {
+		milliseconds = millisecondsRemaining;
+	}
+
+	return {
+		minutes: minutes,
+		seconds: seconds,
+		milliseconds: milliseconds
+	}
+}
 dancevis.Time.prototype.isBetween = function(time1, time2) {
 	var milli1 = time1.inMilliseconds();
 	var milli2 = time2.inMilliseconds();
@@ -330,12 +360,12 @@ dancevis.Speed.prototype.speed = function() {
 	return this.pixelsPerSecond;
 }
 dancevis.Speed.prototype.setSpeed = function(speedSet) {
-	speedSet = dancevis.Util.defaultTo(speedSet, {});
+	speedSet = dancevis.Util.defaultTo(speedSet, {speed:0});
 
 	// prevent divide by zero
 	speedSet.duration = dancevis.Util.defaultTo(speedSet.duration, new dancevis.Time({milliseconds:1}));
 
-	if (speedSet.speed) {
+	if (dancevis.Util.isNum(speedSet.speed)) {
 		this.pixelsPerSecond = speedSet.speed;
 	}
 	else if (speedSet.distance && speedSet.duration) {
@@ -495,6 +525,11 @@ dancevis.Shapes.Line.prototype.setPosition = function(position) {
 	}
 }
 dancevis.Shapes.Line.prototype.nextPositionAndOrientation = function(startPosition, startOrientation, dt, speed) {
+	if (!dt || dt.__type != dancevis.Time.__type ||
+		!speed || speed.__type != dancevis.Speed.__type) {
+		throw new dancevis.Error.DanceVisError("wrong type supplied");
+	}
+
 	var nextX = startPosition.x + (speed.speed()*dt.inSeconds())*this.angle.cos();
 	var nextY = startPosition.y + (speed.speed()*dt.inSeconds())*this.angle.sin();
 	
@@ -604,8 +639,15 @@ dancevis.Shapes.Circle.prototype.setPosition = function(position) {
 	}
 }
 dancevis.Shapes.Circle.prototype.nextPositionAndOrientation = function(startPosition, startOrientation, dt, speed) {
-	if (!startPosition || startPosition.__type != dancevis.Position.__type ||
-		!dt || dt.__type != dancevis.Time.__type ||
+	if (startPosition === null) {
+		if (startOrientation === null)
+			throw new dancevis.Error.DanceVisError("either startPosition or startOrientation must be non-null");
+		startPosition = this.positionAtAngle(startOrientation);
+	}
+	if (startOrientation === null && startPosition === null) {
+		throw new dancevis.Error.DanceVisError("either startPosition or startOrientation must be non-null");
+	}
+	if (!dt || dt.__type != dancevis.Time.__type ||
 		!speed || speed.__type != dancevis.Speed.__type) {
 		throw new dancevis.Error.DanceVisError("wrong type supplied");
 	}
@@ -614,6 +656,7 @@ dancevis.Shapes.Circle.prototype.nextPositionAndOrientation = function(startPosi
 	var dist = dt.inSeconds() * speed.speed();
 	var radiansCovered = dist / this.radius;
 	var positionAngle = this.angleFromPosition(startPosition);
+
 	if (this.clockwise) {
 		var newAngle =  new dancevis.Orientation(positionAngle.inRadians() - radiansCovered);
 		var nextPos = this.center.positionInDirection(this.radius, newAngle);
@@ -638,11 +681,14 @@ dancevis.Shapes.Circle.prototype.positionAtAngle = function(angle) {
 dancevis.Shapes.Circle.prototype.angleFromPosition = function(position) {
 	if (!position || position.__type != dancevis.Position.__type)
 		throw new dancevis.Error.DanceVisError("wrong type supplied");
+
 	if (this.center.equals(position))
 		return new dancevis.Orientation(0);
+
 	var x = position.x - this.center.x;
 	var y = position.y - this.center.y;
 	var atan = Math.atan(y / x);
+
 	if (x < 0) atan += Math.PI;
 	return new dancevis.Orientation(atan);
 }
@@ -671,10 +717,10 @@ dancevis.Shapes.Circle.prototype.isOnShape = function(position, err) {
 	if (!position || position.__type != dancevis.Position.__type)
 		throw new dancevis.Error.DanceVisError("wrong type supplied");
 
-	err = err || 2;
+	err = err || 0;
 
 	var distFromCenter = this.center.distance(position);
-	if ((distFromCenter - this.radius) > err) {
+	if (Math.abs(distFromCenter - this.radius) > err) {
 		return false;
 	}
 	var positionAngle = this.angleFromPosition(position);
@@ -828,16 +874,15 @@ dancevis.Group = function(groupOptions) {
 	this.endTime = null;
 	this.lastTime = null;
 	this.active = false;
-	this.position = null;
-	this.orientation = null;
-	this.beginAction = null;
-	this.endAction = null;
+	this.onChildAddition = null;
+	this.onChildRemoval = null;
 	this.endCondition = null;
 	this.clientUpdateFunctions = null;
 	this.groupId = null;
 	this.updateChildren = true;
 	this.myChildrenUpdate = true;
 	this.exitPoints = {};
+	this.initialPlacementControl = null;
 
 	groupOptions = dancevis.Util.defaultTo(groupOptions, {});
 	if (!groupOptions.shape) 
@@ -852,8 +897,8 @@ dancevis.Group = function(groupOptions) {
 	if (!groupOptions.speed || groupOptions.speed.__type != dancevis.Speed.__type)
 		throw new dancevis.Error.DanceVisError("invalid parameters to construct a group");
 
-	if (!groupOptions.position || groupOptions.position.__type != dancevis.Position.__type) 
-		throw new dancevis.Error.DanceVisError("invalid parameters to construct a group");
+	//if (!groupOptions.position || groupOptions.position.__type != dancevis.Position.__type) 
+	//	throw new dancevis.Error.DanceVisError("invalid parameters to construct a group");
 	
 	if (!groupOptions.orientation || groupOptions.orientation.__type != dancevis.Orientation.__type) 
 		throw new dancevis.Error.DanceVisError("invalid parameters to construct a group");
@@ -875,7 +920,7 @@ dancevis.Group = function(groupOptions) {
 	this.endTime = groupOptions.endTime.copy();
 	this.lastTime = this.startTime.copy();
 
-	this.setPosition(groupOptions.position.copy());
+	if (groupOptions.position) this.setPosition(groupOptions.position.copy());
 	this.setOrientation(groupOptions.orientation.copy());
 
 	this.clientUpdateFunctions = {};
@@ -917,7 +962,6 @@ dancevis.Group.prototype.updateChildrenBasedOnMyShape = function(currentTime) {
 				var validTime = (ep.startTime === null && ep.endTime === null) || currentTime.isBetween(ep.startTime, ep.endTime);
 				var validDist = child.getPosition().distance(ep.position) <= 1;
 				if (validTime && validDist) {
-				    console.log(currentTime.inSeconds());
 					child.setParent(ep.nextGroup);
 				}
 			}
@@ -949,22 +993,23 @@ dancevis.Group.prototype.childrenTimeIs = function(currentTime) {
 	}
 }
 dancevis.Group.prototype.setMyPositionAndModifyChildren = function(newPosition, newOrientation) {
-	if (!newPosition || newPosition.__type != dancevis.Position.__type) {
+	if (!newPosition || newPosition.__type != dancevis.Position.__type)
 		throw new dancevis.Error.DanceVisError("newPosition is not of type position");
-	}
-	if (!newOrientation || newOrientation.__type != dancevis.Orientation.__type) {
+
+	if (!newOrientation || newOrientation.__type != dancevis.Orientation.__type)
 		throw new dancevis.Error.DanceVisError("newOrientation is not of type orientation");
-	}
+
 
 	var dx = newPosition.x - this.getPosition().x;
 	var dy = newPosition.y - this.getPosition().y;
-	var dtheta = newOrientation.inRadians() - this.getOrientation().inRadians();
+	var dtheta = new dancevis.Orientation(newOrientation.inRadians() - this.getOrientation().inRadians());
 
 	for (var i = 0; i < this.children.length; i++) {
 		var child = this.children[i];
 		var childPos = child.getPosition();
+		//var newChildPosition = new dancevis.Position(childPos.x + (dx * dtheta.cos()), childPos.y + (dy * dtheta.sin()));
 		var newChildPosition = new dancevis.Position(childPos.x + dx, childPos.y + dy);
-		var newChildOrientation = new dancevis.Orientation(child.getOrientation().inRadians() + dtheta);
+		var newChildOrientation = new dancevis.Orientation(child.getOrientation().inRadians() + dtheta.inRadians());
 
 		child.setMyPositionAndModifyChildren(newChildPosition, newChildOrientation);
 	}
@@ -982,9 +1027,6 @@ dancevis.Group.prototype.getPosition = function() {
 }
 dancevis.Group.prototype.setPosition = function(position) {
 	this.shape.setPosition(position);
-}
-dancevis.Group.prototype.forwardChild = function(child, toGroup) {
-
 }
 dancevis.Group.prototype.timeIs = function(currentTime) {
 	if (!currentTime || currentTime.__type != dancevis.Time.__type) {
@@ -1011,16 +1053,27 @@ dancevis.Group.prototype.insertChild = function(child, index) {
 		throw new dancevis.Error.DanceVisError("child is neither a group nor a dancer");
 	}
 	index = dancevis.Util.defaultNum(index, this.children.length);
-	//this.shape.add
-	var update = this.shape.nextPositionAndOrientation(child.getPosition(), null, new dancevis.Time(), this.speed);
 
+	if (this.shape.__type == dancevis.Shapes.Circle.__type) {
+		var childPos = this.shape.isOnShape(child.getPosition(), 2) ? child.getPosition() : null;
+		var childOri = childPos === null ? child.getOrientation() : null;
+	}
+	else {
+		var childPos = child.getPosition();
+		var childOri = child.getOrientation();
+	}
+
+	var update = this.shape.nextPositionAndOrientation(childPos, childOri, new dancevis.Time(), this.speed);
 	child.setMyPositionAndModifyChildren(update.position, update.orientation);
-	
-	if (index >= this.children.length) this.children.push(child);
+
+	if (index >= this.children.length) {
+		this.children.push(child);
+		index = this.children.length - 1;
+	}
 	else this.children.splice(index, 0, child);
 	
-	if (this.beginAction) {
-		this.beginAction.call(this, child, index);
+	if (this.onChildAddition) {
+		this.onChildAddition.call(this, child, index);
 	}
 }
 dancevis.Group.prototype.removeChildById = function(groupId) {
@@ -1055,7 +1108,8 @@ dancevis.Group.prototype.addExitPoint = function(groupEPObj) {
 	if (!groupEPObj.nextGroup.shape.isOnShape(groupEPObj.position, 3))
 		throw new dancevis.Error.DanceVisError("exit position is not on the next group's shape");
 
-	if (groupEPObj.endTime.inMilliseconds() < groupEPObj.startTime.inMilliseconds())
+	if (groupEPObj.endTime && groupEPObj.endTime &&
+		groupEPObj.endTime.inMilliseconds() < groupEPObj.startTime.inMilliseconds())
 		throw new dancevis.Error.DanceVisError("endTime is earlier than startTime");
 
 	groupEPObj.element = null;
@@ -1072,9 +1126,9 @@ dancevis.Group.prototype.removeChildByIndex = function(index) {
 	if (index > this.children.length)
 		return;
 
-	var child = this.children.splice(index, 1);
-	if (this.endAction) {
-		this.endAction.call(this, child, index);
+	var child = this.children.splice(index, 1)[0];
+	if (this.onChildRemoval) {
+		this.onChildRemoval.call(this, child, index);
 	}
 }
 dancevis.Group.prototype.setOptions = function(options) {
@@ -1096,11 +1150,11 @@ dancevis.Group.prototype.setParent = function(parent) {
 	this.parentGroup = parent;
 	this.parentGroup.insertChild(this);
 }
-dancevis.Group.prototype.setBeginAction = function(func) {
-	this.beginAction = func;
+dancevis.Group.prototype.setOnChildAddition = function(func) {
+	this.onChildAddition = func;
 }
-dancevis.Group.prototype.setEndAction = function(func) {
-	this.endAction = func;
+dancevis.Group.prototype.setOnChildRemoval = function(func) {
+	this.onChildRemoval = func;
 }
 dancevis.Group.prototype.setEndCondition = function(func) {
 	this.endCondition = func;
@@ -1211,6 +1265,147 @@ dancevis.Dancer.prototype.setMyPositionAndModifyChildren = function(position, ne
 		this.element.style.top = position.y;
 	}
 }
+
+dancevis.TimeManager = function() {
+	this.numMillisecondsPerInterval = 10;
+	this.intervalId = null;
+	this.groups = [];
+	this.currentTime = null;
+	this.veryFirstTime = true;
+	this.reachedEnd = false;
+	this.timerDiv = null;
+	this.annotations = [];
+	this.annotationPosition = new dancevis.Position(400, 100);
+}
+dancevis.TimeManager.prototype.timer = function(position) {
+	if (!this.timerDiv) {
+		this.timerDiv = document.createElement("div");
+		this.timerDiv.className = "timerDiv";
+		this.timerDiv.innerHTML = "00:00:00";
+		document.body.appendChild(this.timerDiv);
+	}
+	else this.timerDiv.parentNode.removeChild(this.timerDiv);
+
+	var screenCoords = position.screenCoords();
+	this.timerDiv.style.left = screenCoords.x - (this.timerDiv.offsetWidth / 2) + "px";
+	this.timerDiv.style.top = screenCoords.y - (this.timerDiv.offsetHeight / 2) + "px";
+	
+	return this;
+}
+dancevis.TimeManager.prototype.scheduleGroup = function(group) {
+	if (!group || group.__type != dancevis.Group.__type)
+		throw new dancevis.Error.DanceVisError("group is not of type group");
+
+	this.groups.push(group);
+	return this;
+}
+dancevis.TimeManager.prototype.annotateAt = function(position) {
+	if (!position || position.__type != dancevis.Position.__type)
+		throw new dancevis.Error.DanceVisError("invalid position for annotations");
+
+	this.annotationPosition = position;
+	return this;
+}
+dancevis.TimeManager.prototype.annotate = function(str, startTime, endTime) {
+	if (!startTime || startTime.__type != dancevis.Time.__type)
+		throw new dancevis.Error.DanceVisError("invalid startTime for annotation");
+
+	if (!endTime || endTime.__type != dancevis.Time.__type) 
+		throw new dancevis.Error.DanceVisError("invalid endTime for annotation");
+
+	if (!this.annotationDiv) {
+		this.annotationDiv = document.createElement("div");
+		this.annotationDiv.className = "annotationDiv";
+
+		var screenCoords = this.annotationPosition.screenCoords();
+		this.annotationDiv.style.left = screenCoords.x + "px";
+		this.annotationDiv.style.top = screenCoords.y + "px";
+		document.body.appendChild(this.annotationDiv);
+	}
+
+	var obj = {
+		annotation: str,
+		startTime: startTime,
+		endTime: endTime,
+		element: document.createElement("p"),
+		shown: false
+	}
+	obj.element.innerHTML = str;
+
+	this.annotations.push(obj);
+
+	return this;
+}
+dancevis.TimeManager.prototype.formatedTimeStr = function(currentTime) {
+	var toLength = function(num, x) {
+		var str = num + "";
+		var len = str.length;
+		if (len >= x) return str;
+
+		str = "";
+		for (var i = 0; i < x - len; i++) str += "0";
+		return str + num;
+	}
+
+	var tunits = currentTime.inTimeUnits();
+	return toLength(tunits.minutes, 2) + ":" + toLength(tunits.seconds, 2) + ":" + toLength(Math.floor(tunits.milliseconds / 10), 2);	
+}
+dancevis.TimeManager.prototype.onTimeStep = function() {
+	var time = new dancevis.Time({milliseconds: (this.currentTime.inMilliseconds() + this.numMillisecondsPerInterval)});
+
+	var stopUpdate = true;
+	for (var i = 0; i < this.groups.length; i++) {
+		this.groups[i].timeIs(time);
+		if (time.isBetween(this.groups[i].startTime, this.groups[i].endTime))
+			stopUpdate = false;
+	}
+	for (var i = 0; i < this.annotations.length; i++) {
+		var obj = this.annotations[i];
+		var validTime = time.isBetween(this.annotations[i].startTime, this.annotations[i].endTime);
+		if (!obj.shown && validTime) {
+			this.annotationDiv.appendChild(obj.element);
+			obj.shown = true;
+		}
+		else if (obj.shown && !validTime) {
+			obj.element.parentNode.removeChild(obj.element);
+			obj.shown = false;
+			//this.annotations.splice(i, 1);
+		}
+	}
+
+	if (stopUpdate) {
+		this.reachedEnd = true;
+		this.pause();
+	}
+	else if (this.timerDiv) {
+		var frmtime = this.formatedTimeStr(time);
+		this.timerDiv.innerHTML = frmtime;
+	}
+	this.currentTime = time;
+}
+
+dancevis.TimeManager.prototype.play = function() {
+	if (this.reachedEnd) return;
+
+	if (this.veryFirstTime) {
+		dancevis.Time.zeroTimeIsNow();
+		this.currentTime = dancevis.Time.now();
+		this.veryFirstTime = false;
+	}
+	
+	if (this.intervalId !== null) this.pause();
+
+	var obj = this;
+	this.intervalId = setInterval(function() { obj.onTimeStep(); }, this.numMillisecondsPerInterval);
+}
+dancevis.TimeManager.prototype.pause = function() {
+	clearInterval(this.intervalId);
+	this.intervalId = null;
+}
+dancevis.TimeManager.prototype.reset = function() {
+	window.location.reload();
+}
+
 
 
 function DrawBackground(left, top){
