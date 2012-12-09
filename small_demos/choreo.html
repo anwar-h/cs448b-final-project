@@ -25,13 +25,40 @@ var outer = new dancevis.Group({
 					position: outercircle.center,
 					orientation: new dancevis.Orientation(0)
 				});
-outer.setUpdateFunction("stop", new dancevis.Time({seconds:10}), new dancevis.Time({seconds:12}), function() {
+
+var splitCouples = false;
+outer.setUpdateFunction("stop", new dancevis.Time({seconds:3}), new dancevis.Time({seconds:5}), function() {
 	this.updateChildren = false;
+	if (!splitCouples) {
+		for (var i = 0; i < this.children.length; i++) {
+			var couple = this.children[i];
+			var couple2 = new dancevis.Group({
+				shape: innercircle,
+				startTime: dancevis.Time.now(),
+				endTime: outer2.endTime,
+				speed: new dancevis.Speed({speed:50}),
+				parentGroup: outer2,
+				orientation: couple.getOrientation()
+			});
+
+			couple.children[0].setParent(couple2);
+		}
+		splitCouples = true;
+	}
 });
 
 outer.setUpdateFunction("clockwise", new dancevis.Time({seconds:12}), outer.endTime, function() {
 	this.shape.clockwise = true;
 });
+
+var outer2 = new dancevis.Group({
+					shape: outercircle,
+					startTime: new dancevis.Time({seconds:6}),
+					endTime: new dancevis.Time({seconds:20}),
+					speed: new dancevis.Speed({speed:70}),
+					position: outercircle.center,
+					orientation: new dancevis.Orientation(0)
+				});
 
 for(var i = 0; i < 6; i++){
     var couple = new dancevis.Group({
@@ -42,12 +69,10 @@ for(var i = 0; i < 6; i++){
 					parentGroup: outer,
 					orientation: new dancevis.Orientation(60 * i, false)
 				});
-	couple.showShapeOnScreen(false);
+	//couple.showShapeOnScreen(true);
 	couple.setUpdateFunction("pivot", new dancevis.Time({seconds:10}), new dancevis.Time({seconds:12}), function() {
 	    this.updateChildren = false;
 	});
-	var pos1 = couple.getPosition().positionInDirection(200, new dancevis.Orientation(60*i, false)); // false for degrees
-	var pos2 = couple.getPosition().positionInDirection(200, new dancevis.Orientation(60*i + 180, false));
 	
 	var dancer1 = new dancevis.Dancer({
 			//position: pos1,
@@ -61,8 +86,8 @@ for(var i = 0; i < 6; i++){
 	       dancerColor: "steelBlue",
 		   dancerSize: dancevis.DancerShapeSize.LARGE
    });
-   couple.insertChild(dancer1);
-   couple.insertChild(dancer2);
+   dancer1.setParent(couple);
+   dancer2.setParent(couple);
 }
 
 // line1 group
@@ -85,6 +110,9 @@ outer.addExitPoint({
 	position: line1.shape.startPosition(),
 	nextGroup: line1,
 	showOnScreen: true,
+	//target: function(child) {
+	//	child.getOrientation()
+	//},
 	name: "to_line1"
 });
 
@@ -108,6 +136,7 @@ line1.setEndCondition(function(child, index) {
 });
 
 tmanager.scheduleGroup(outer)
+		.scheduleGroup(outer2)
 		.scheduleGroup(line1)
 		.timer(new dancevis.Position(0, 160))
 
