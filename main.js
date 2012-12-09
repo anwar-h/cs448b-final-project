@@ -1126,7 +1126,7 @@ dancevis.Group.prototype.removeChildByIndex = function(index) {
 	if (index > this.children.length)
 		return;
 
-	var child = this.children.splice(index, 1);
+	var child = this.children.splice(index, 1)[0];
 	if (this.onChildRemoval) {
 		this.onChildRemoval.call(this, child, index);
 	}
@@ -1351,7 +1351,7 @@ dancevis.TimeManager.prototype.formatedTimeStr = function(currentTime) {
 	return toLength(tunits.minutes, 2) + ":" + toLength(tunits.seconds, 2) + ":" + toLength(Math.floor(tunits.milliseconds / 10), 2);	
 }
 dancevis.TimeManager.prototype.onTimeStep = function() {
-	var time = dancevis.Time.now();
+	var time = new dancevis.Time({milliseconds: (this.currentTime.inMilliseconds() + this.numMillisecondsPerInterval)});
 
 	var stopUpdate = true;
 	for (var i = 0; i < this.groups.length; i++) {
@@ -1389,6 +1389,7 @@ dancevis.TimeManager.prototype.play = function() {
 
 	if (this.veryFirstTime) {
 		dancevis.Time.zeroTimeIsNow();
+		this.currentTime = dancevis.Time.now();
 		this.veryFirstTime = false;
 	}
 	
@@ -1401,8 +1402,8 @@ dancevis.TimeManager.prototype.pause = function() {
 	clearInterval(this.intervalId);
 	this.intervalId = null;
 }
-dancevis.TimeManager.prototype.skipBack = function() {
-
+dancevis.TimeManager.prototype.reset = function() {
+	window.location.reload();
 }
 
 
