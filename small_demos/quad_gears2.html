@@ -52,7 +52,8 @@ var TopLeft2 = new dancevis.Group({
 					orientation: new dancevis.Orientation(0)
 				});
 TopLeft1.shape.clockwise = true;
-TopLeft2.shape.clockwise = true;
+TopLeft2.shape.clockwise = false;
+TopRight2.shape.clockwise = true;
 
 var brPos = outercircle.center.positionInDirection(outercircle.radius * Math.sqrt(2), new dancevis.Orientation(-45, false));
 var BotRight1 = new dancevis.Group({
@@ -94,6 +95,41 @@ BotRight1.shape.clockwise = true;
 BotRight2.shape.clockwise = true;
 
 
+//TopLeft1.setOnChildRemoval(function(child, index) {
+	//child.children[0].setPosition(child.getPosition());
+//});
+var removal = function() {
+	var len = this.children.length;
+	for (var i = 0; i < len; i++) {
+		var child = this.children[i];
+		if (!child || child.__type == dancevis.Dancer.__type) continue;
+
+		var angle = this.shape.angleFromPosition(child.children[0].getPosition());
+		var newPos = this.shape.getPosition().positionInDirection(this.shape.radius, angle);
+		child.children[0].setPosition(newPos);
+		child.children[0].setParent(this);
+		child.showShapeOnScreen(false);
+		this.removeChildById(child.groupId);
+	}
+}
+TopLeft1.setUpdateFunction("remove", new dancevis.Time({seconds:1}), new dancevis.Time({seconds:10}), function() {
+	removal.call(this);
+});
+TopLeft2.setUpdateFunction("remove", new dancevis.Time({seconds:1}), new dancevis.Time({seconds:10}), function() {
+	removal.call(this);
+});
+TopRight1.setUpdateFunction("remove", new dancevis.Time({seconds:1}), new dancevis.Time({seconds:10}), function() {
+	removal.call(this);
+});
+TopRight2.setUpdateFunction("remove", new dancevis.Time({seconds:1}), new dancevis.Time({seconds:10}), function() {
+	removal.call(this);
+});
+TopLeft2.setUpdateFunction("clockwise", new dancevis.Time({seconds:.9}), new dancevis.Time({seconds:1.5}), function() {
+	this.shape.clockwise = true;
+});
+TopRight2.setUpdateFunction("clockwise", new dancevis.Time({seconds:.9}), new dancevis.Time({seconds:1.5}), function() {
+	this.shape.clockwise = false;
+});
 
 tmanager.annotateAt(new dancevis.Position(-450,140))
 	.annotate("Da dah da dah ... da dum..",
@@ -145,6 +181,10 @@ for(var i = 0; i < 4; i++){
 					orientation: new dancevis.Orientation(dancerDegree + 45, false)
 				});
 
+    coupleTR1.setUpdateFunction("stop", null, null, function() { this.updateChildren = false; });
+    coupleTR2.setUpdateFunction("stop", null, null, function() { this.updateChildren = false; });
+    coupleTL1.setUpdateFunction("stop", null, null, function() { this.updateChildren = false; });
+    coupleTL2.setUpdateFunction("stop", null, null, function() { this.updateChildren = false; });
 	
 	var dancerTR1 = new dancevis.Dancer({
 			orientation: new dancevis.Orientation(60*i, false),
@@ -213,6 +253,10 @@ for(var i = 0; i < 4; i++){
 					orientation: new dancevis.Orientation(dancerDegree, false)
 				});
 
+    coupleBR1.setUpdateFunction("stop", null, null, function() { this.updateChildren = false; });
+    coupleBR2.setUpdateFunction("stop", null, null, function() { this.updateChildren = false; });
+    coupleBL1.setUpdateFunction("stop", null, null, function() { this.updateChildren = false; });
+    coupleBL2.setUpdateFunction("stop", null, null, function() { this.updateChildren = false; });
 	
 	var dancerBR1 = new dancevis.Dancer({
 			orientation: new dancevis.Orientation(60*i, false),
