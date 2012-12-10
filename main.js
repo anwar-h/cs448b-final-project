@@ -955,6 +955,7 @@ dancevis.Group = function(groupOptions) {
 
 	var parent = dancevis.Util.defaultTo(groupOptions.parentGroup, null);
 	if (parent) this.setParent(parent);
+
 	this.groupName = dancevis.Util.defaultTo(groupOptions.groupName, "");
 	dancevis.Group.groups.push(this);
 }
@@ -976,7 +977,7 @@ dancevis.Group.prototype.getGroupName = function() {
 	return this.groupName;
 }
 dancevis.Group.prototype.setGroupName = function(name) {
-	return this.groupName = name;
+	this.groupName = name;
 }
 dancevis.Group.prototype.updateChildrenBasedOnMyShape = function(currentTime) {
 	if (!currentTime || currentTime.__type != dancevis.Time.__type) {
