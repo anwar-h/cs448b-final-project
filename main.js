@@ -580,6 +580,8 @@ dancevis.Shapes.Line.prototype.showShapeOnScreen = function(bool) {
 	if (bool) {
 		var startPoint = this.start_position.screenCoords();
 		var endPoint = this.endPosition().screenCoords();
+		console.log("start pos: " + startPoint.x + " , " + startPoint.y);
+		console.log("end pos: " + endPoint.x + " , " + endPoint.y);
 		var d3elem = d3.select("g").append("svg:line")
 					.attr("x1", startPoint.x)
 					.attr("y1", startPoint.y)
@@ -1105,7 +1107,7 @@ dancevis.Group.prototype.addExitPoint = function(groupEPObj) {
 
 	if (!groupEPObj.nextGroup || groupEPObj.nextGroup.__type != dancevis.Group.__type)
 		throw new dancevis.Error.DanceVisError("nextGroup is not of type group");
-
+   
 	if (!groupEPObj.position || groupEPObj.position.__type != dancevis.Position.__type) 
 		throw new dancevis.Error.DanceVisError("position is not of type position");		
 
