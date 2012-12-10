@@ -19,14 +19,14 @@ var bottom1 = outercircle.positionAtAngle(new dancevis.Orientation(200, false));
 
 // Outer group
 var outer = new dancevis.Group({
-					shape: outercircle,
+					shape: new dancevis.Shapes.Circle(origin, 100, new dancevis.Orientation(0,false), new dancevis.Orientation(270,false)),
 					startTime: dancevis.Time.now(),
 					endTime: new dancevis.Time({seconds:30}),
 					speed: new dancevis.Speed({speed:70}),
 					position: outercircle.center,
 					orientation: new dancevis.Orientation(0)
 				});
-outer.showShapeOnScreen(false);
+outer.showShapeOnScreen(true);
 
 outer.setOnChildAddition(function(child, index) {
 	if (child.getPosition()) return;
@@ -114,7 +114,7 @@ var line1 = new dancevis.Group({
 					speed: new dancevis.Speed({speed:70}),
 					orientation: new dancevis.Orientation(0)
 				});
-line1.showShapeOnScreen(false);
+line1.showShapeOnScreen(true);
 
 // line2 group
 var vertical_line = new dancevis.Shapes.Line(new dancevis.Position(-150,140), 300, new dancevis.Orientation(-90, false));
@@ -195,11 +195,11 @@ outer.setOnChildRemoval(function(child, index) {
 	var target1 = new dancevis.Orientation(0);
 	var target2 = new dancevis.Orientation(180, false);
 
-	console.log(child);
-	while(!child.children[0].getOrientation().equals(target1) && !child.children[0].getOrientation().equals(target2)) {
-		console.log(child.children[0].getOrientation().inDegrees());
-		child.updateChildrenBasedOnMyShape(dancevis.Time.now());
-	}
+	//console.log(child);
+	//while(!child.children[0].getOrientation().equals(target1) && !child.children[0].getOrientation().equals(target2)) {
+	//	console.log(child.children[0].getOrientation().inDegrees());
+	//	child.updateChildrenBasedOnMyShape(dancevis.Time.now());
+	//}
 });
 line1.setEndCondition(function(child, index) {
 	var dist_between = this.shape.length / 4;

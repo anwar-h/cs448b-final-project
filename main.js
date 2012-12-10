@@ -608,6 +608,7 @@ dancevis.Shapes.Circle = function(center, radius, startAngle, stopAngle) {
 	this.radius = dancevis.Util.defaultNum(radius, 10);
 	startAngle = dancevis.Util.defaultTo(startAngle, new dancevis.Orientation(0));
 	stopAngle = dancevis.Util.defaultTo(stopAngle, new dancevis.Orientation(Math.PI *2));
+
 	if (center.__type != dancevis.Position.__type ||
 		startAngle.__type != dancevis.Orientation.__type ||
 		stopAngle.__type != dancevis.Orientation.__type) {
@@ -654,6 +655,14 @@ dancevis.Shapes.Circle.prototype.nextPositionAndOrientation = function(startPosi
 	if (!dt || dt.__type != dancevis.Time.__type ||
 		!speed || speed.__type != dancevis.Speed.__type) {
 		throw new dancevis.Error.DanceVisError("wrong type supplied");
+	}
+
+	var positionAngle = this.angleFromPosition(startPosition);
+	if (!positionAngle.isBetween(this.startAngle, this.stopAngle)) {
+		return {
+			position: startPosition,
+			orientation: startOrientation
+		}
 	}
 
 	startOrientation = startOrientation || null;
