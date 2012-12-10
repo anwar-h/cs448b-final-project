@@ -195,6 +195,10 @@ dancevis.Orientation = function(angle, isRadians) {
 		if (!isRadians) theta = dancevis.Orientation.degreesToRadians(theta);
 	}
 	this.angle = theta;
+	var twoPi = (2 * Math.PI);
+	var modAngle = this.angle % twoPi;
+	this.angle = (modAngle == 0 && this.angle > 0) ? twoPi : modAngle;
+	this.angle = (this.angle < 0) ? this.angle + twoPi : this.angle;
 }
 // Static Variables for class Orientation
 dancevis.Orientation.__type = "orientation";
@@ -237,10 +241,14 @@ dancevis.Orientation.prototype.isBetween = function(angle1, angle2) {
 	if (!angle2 || angle2.__type != dancevis.Orientation.__type)
 		throw new dancevis.Error.DanceVisError("wrong type supplied");
 
-	
+	var me = this.angle;
+	var a1 = angle1.angle;
+	var a2 = angle2.angle;
 
-	console.log("STILL NEED TO DO THIS");
-	return true;
+	var smaller = a1 < a2 ? a1 : a2;
+	var larger  = a1 > a2 ? a1 : a2;
+
+	return (me >= smaller && me <= larger);
 }
 dancevis.Orientation.prototype.toString = function() {
 	var numDecimal = 2;
@@ -720,9 +728,6 @@ dancevis.Shapes.Circle.prototype.isOnShape = function(position, err) {
 		return false;
 	}
 	var positionAngle = this.angleFromPosition(position);
-	var stopIsBigger = this.startAngle.inRadians() < this.stopAngle.inRadians();
-	var big = stopIsBigger ? this.stopAngle : this.startAngle;
-	var small = stopIsBigger ? this.startAngle : this.stopAngle;
 	if (!positionAngle.isBetween(this.startAngle, this.stopAngle)) {
 		return false;
 	}
@@ -1017,6 +1022,10 @@ dancevis.Group.prototype.getOrientation = function() {
 	return this.shape.getOrientation();
 }
 dancevis.Group.prototype.setOrientation = function(orientation) {
+	if (this.parentGroup && this.parentGroup.shape.shapeTypeId == dancevis.Shapes.ShapeTypeId.CIRCLE) {
+		var newPos = this.parentGroup.shape.getPosition().positionInDirection(this.parentGroup.shape.radius, orientation);
+		this.setPosition(newPos);
+	}
 	this.shape.setOrientation(orientation);
 }
 dancevis.Group.prototype.getPosition = function() {
@@ -1080,22 +1089,6 @@ dancevis.Group.prototype.removeChildById = function(groupId) {
 			break;
 		}
 	}
-}
-dancevis.Group.prototype.onmouseover = function(evt) {
-	this.popup = document.createElement("div");
-	var table = document.createElement("table");
-	var row1 = "<tr><th>"+this.dancerName+"</th></tr>";
-	var row2 = "<tr><td class='value'>"+this.getPosition().toString()+"</td></tr>";
-	var row3 = "<tr><td class='value'>"+this.getOrientation().inDegrees().toFixed(2)+" degrees</td></tr>";
-	table.innerHTML = row1 + row2 + row3;
-	this.popup.className = "popup";
-	this.popup.style.left = (evt.pageX + 5) + "px";
-	this.popup.style.top = (evt.pageY) + "px";
-	this.popup.appendChild(table);
-	document.body.appendChild(this.popup);
-}
-dancevis.Group.prototype.onmouseout = function(evt) {
-	document.body.removeChild(this.popup);
 }
 dancevis.Group.prototype.addExitPoint = function(groupEPObj) {
 	if (!groupEPObj)
