@@ -218,6 +218,14 @@ dancevis.Orientation.radiansToDegrees = function(radians) {
 dancevis.Orientation.degreesToRadians = function(degrees) {
 	return degrees * 2 * Math.PI / 360.0;
 }
+dancevis.Orientation.positionsToOrientation = function(pos1, pos2) {
+	var x = pos2.x - pos1.x;
+	var y = pos2.y - pos1.y;
+	var atan = Math.atan(y / x);
+
+	if (x < 0) atan += Math.PI;
+	return new dancevis.Orientation(atan);
+}
 // Methods for class Orientation
 dancevis.Orientation.prototype.inRadians = function() {
 	return this.angle;
@@ -709,12 +717,7 @@ dancevis.Shapes.Circle.prototype.angleFromPosition = function(position) {
 	if (this.center.equals(position))
 		return new dancevis.Orientation(0);
 
-	var x = position.x - this.center.x;
-	var y = position.y - this.center.y;
-	var atan = Math.atan(y / x);
-
-	if (x < 0) atan += Math.PI;
-	return new dancevis.Orientation(atan);
+	return dancevis.Orientation.positionsToOrientation(position, this.center);
 }
 dancevis.Shapes.Circle.prototype.arcLength = function(angle) {
 	if (!angle || angle.__type != dancevis.Orientation.__type)
