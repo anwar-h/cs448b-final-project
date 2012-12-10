@@ -43,8 +43,9 @@ dancevis.Util.defaultNum = function(value, defaultNumValue) {
 	}
 	return num;
 }
-dancevis.Util.floatsEqual = function(one, two) {
-	return Math.abs(one - two) < 0.000001;
+dancevis.Util.floatsEqual = function(one, two, err) {
+	err = err || 0.000001;
+	return Math.abs(one - two) < err;
 }
 dancevis.Util.counter = function(startValue, incrementStep) {
 	var count = dancevis.Util.defaultNum(startValue, 0);
@@ -109,7 +110,7 @@ dancevis.Error.log = function(err) {
 dancevis.Error.DanceVisError = function(message) {
 	var defaultMessage = "'An error has occured inside dancevis library'";
 	this.name = "DanceVisError";
-	this.message = "function "+arguments.callee.caller.name+"(): '"+message+"'" || defaultMessage;
+	this.message = "'"+message+"'" || defaultMessage;
 }
 dancevis.Error.DanceVisError.prototype = new Error();
 dancevis.Error.DanceVisError.prototype.constructor = dancevis.Error.DanceVisError;
@@ -164,7 +165,7 @@ dancevis.Position.prototype.positionInDirection = function(distance, angle) {
 dancevis.Position.prototype.equals = function(other) {
 	if (!other || other.__type != dancevis.Position.__type)
 		throw new dancevis.Error.DanceVisError("wrong type supplied");
-	return (other.x == this.x && other.y == this.y);
+	return (dancevis.Util.floatsEqual(other.x, this.x) && dancevis.Util.floatsEqual(other.y, this.y));
 }
 dancevis.Position.prototype.copy = function() {
 	return new dancevis.Position(this.x, this.y);
@@ -195,10 +196,18 @@ dancevis.Orientation = function(angle, isRadians) {
 		if (!isRadians) theta = dancevis.Orientation.degreesToRadians(theta);
 	}
 	this.angle = theta;
+
 	var twoPi = (2 * Math.PI);
-	var modAngle = this.angle % twoPi;
-	this.angle = (modAngle == 0 && this.angle > 0) ? twoPi : modAngle;
-	this.angle = (this.angle < 0) ? this.angle + twoPi : this.angle;
+	var modAngle = theta % twoPi;
+
+	var a = theta;
+	if (modAngle == 0 && theta > 0) {
+		a = twoPi;
+	}
+	else {
+		a = modAngle;
+	}
+	this.angle = (a < 0) ? a + twoPi : a;
 }
 // Static Variables for class Orientation
 dancevis.Orientation.__type = "orientation";
@@ -208,6 +217,14 @@ dancevis.Orientation.radiansToDegrees = function(radians) {
 }
 dancevis.Orientation.degreesToRadians = function(degrees) {
 	return degrees * 2 * Math.PI / 360.0;
+}
+dancevis.Orientation.positionsToOrientation = function(pos1, pos2) {
+	var x = pos2.x - pos1.x;
+	var y = pos2.y - pos1.y;
+	var atan = Math.atan(y / x);
+
+	if (x < 0) atan += Math.PI;
+	return new dancevis.Orientation(atan);
 }
 // Methods for class Orientation
 dancevis.Orientation.prototype.inRadians = function() {
@@ -552,22 +569,24 @@ dancevis.Shapes.Line.prototype.length = function() {
 dancevis.Shapes.Line.prototype.angle = function() {
    return angle;
 }
-dancevis.Shapes.Line.prototype.distanceToLine = function() {
-     
-}
-
 dancevis.Shapes.Line.prototype.isOnShape = function(position, err) {
-	err = err || .001;
-   var endPoint = this.endPosition();
-   var a = (endPoint.y - this.start_position.y) / (endPoint.x - this.start_position.x);
-   var b = this.start_position.y - a * this.start_position.x;
-   if ( Math.abs(position.y - (a*position.x+b)) < err){
-	  return true;
-      if(position.x >= this.start_position.x && position.x <= endPoint.x){
-	       return true;
-	  }
-   }
-   return false;
+	err = err || 1;
+	
+	var endPoint = this.endPosition();
+	var dist = this.startPosition().distance(position);
+	if (dancevis.Util.floatsEqual(endPoint.x, this.start_position.x, 1)) {
+		return (dancevis.Util.floatsEqual(this.start_position.x, position.x, 1) && dist <= this.length);
+	}
+	else {
+		var a = (endPoint.y - this.start_position.y) / (endPoint.x - this.start_position.x);
+		var b = this.start_position.y - a * this.start_position.x;
+		if (dancevis.Util.floatsEqual(position.y - (a*position.x+b), 0, err)) { // lie on the line
+			if(dist <= this.length) {
+				return true;
+			}
+		}
+	}
+	return false;
 }
 dancevis.Shapes.Line.prototype.copy = function() {
 	return new dancevis.Shapes.Line(this.start_position.copy(), this.length, this.angle.copy());
@@ -700,12 +719,7 @@ dancevis.Shapes.Circle.prototype.angleFromPosition = function(position) {
 	if (this.center.equals(position))
 		return new dancevis.Orientation(0);
 
-	var x = position.x - this.center.x;
-	var y = position.y - this.center.y;
-	var atan = Math.atan(y / x);
-
-	if (x < 0) atan += Math.PI;
-	return new dancevis.Orientation(atan);
+	return dancevis.Orientation.positionsToOrientation(this.center, position);
 }
 dancevis.Shapes.Circle.prototype.arcLength = function(angle) {
 	if (!angle || angle.__type != dancevis.Orientation.__type)
@@ -732,7 +746,7 @@ dancevis.Shapes.Circle.prototype.isOnShape = function(position, err) {
 	if (!position || position.__type != dancevis.Position.__type)
 		throw new dancevis.Error.DanceVisError("wrong type supplied");
 
-	err = err || 0;
+	err = err || 0.5;
 
 	var distFromCenter = this.center.distance(position);
 	if (Math.abs(distFromCenter - this.radius) > err) {
@@ -891,6 +905,7 @@ dancevis.Group = function(groupOptions) {
 	this.endCondition = null;
 	this.clientUpdateFunctions = null;
 	this.groupId = null;
+	this.groupName = null;
 	this.updateChildren = true;
 	this.myChildrenUpdate = true;
 	this.exitPoints = {};
@@ -933,7 +948,8 @@ dancevis.Group = function(groupOptions) {
 	this.lastTime = this.startTime.copy();
 
 	if (groupOptions.position) this.setPosition(groupOptions.position.copy());
-	if (groupOptions.position === null) this.setPosition(new dancevis.Position(10000000000,10000000000));
+	if (groupOptions.position === null) this.setPosition(new dancevis.Position(10000000000, 10000000000));
+
 	this.setOrientation(groupOptions.orientation.copy());
 
 	this.clientUpdateFunctions = {};
@@ -941,13 +957,29 @@ dancevis.Group = function(groupOptions) {
 
 	var parent = dancevis.Util.defaultTo(groupOptions.parentGroup, null);
 	if (parent) this.setParent(parent);
+	this.groupName = dancevis.Util.defaultTo(groupOptions.groupName, "");
+	dancevis.Group.groups.push(this);
 }
 // Static Variables for class Group
 dancevis.Group.__type = "group";
+dancevis.Group.groups = [];
+dancevis.Group.findGroupByName = function(name) {
+	for (var i = 0; i < dancevis.Group.groups.length; i++) {
+		if (dancevis.Group.groups[i].getGroupName() == name)
+			return dancevis.Group.groups[i];
+	}
+	return null;
+}
 // Static Methods for class Shapes.GeometricShape
 dancevis.Group.__groupIdUnique = dancevis.Util.counter(1847, 1);
 
 // Methods for class Group
+dancevis.Group.prototype.getGroupName = function() {
+	return this.groupName;
+}
+dancevis.Group.prototype.setGroupName = function(name) {
+	return this.groupName = name;
+}
 dancevis.Group.prototype.updateChildrenBasedOnMyShape = function(currentTime) {
 	if (!currentTime || currentTime.__type != dancevis.Time.__type) {
 		throw new dancevis.Error.DanceVisError("currentTime is not of type time");
@@ -987,10 +1019,11 @@ dancevis.Group.prototype.updateChildrenBasedOnMyShape = function(currentTime) {
 
 			if (!isEnd) {
 				// calculate new child position based on shape
-				var update = this.shape.nextPositionAndOrientation(child.getPosition(), child.getOrientation(), dt, this.speed);
-				
-				// set child position to the new one
-				child.setMyPositionAndModifyChildren(update.position, update.orientation);
+				if (this.shape.isOnShape(child.getPosition())) { 
+					var update = this.shape.nextPositionAndOrientation(child.getPosition(), child.getOrientation(), dt, this.speed);
+					// set child position to the new one
+					child.setMyPositionAndModifyChildren(update.position, update.orientation);
+				}
 			}
 		}
 	}
@@ -1128,6 +1161,12 @@ dancevis.Group.prototype.addExitPoint = function(groupEPObj) {
 	if (groupEPObj.endTime && groupEPObj.endTime &&
 		groupEPObj.endTime.inMilliseconds() < groupEPObj.startTime.inMilliseconds())
 		throw new dancevis.Error.DanceVisError("endTime is earlier than startTime");
+
+	for (var name in this.exitPoints) {
+		if (name == groupEPObj.name) {
+			throw new dancevis.Error.DanceVisError("that name is already in use");
+		}
+	}
 
 	groupEPObj.element = null;
 	if (groupEPObj.showOnScreen) {
@@ -1267,13 +1306,76 @@ dancevis.Dancer = function(dancerOptions) {
 	var obj = this;
 	this.element.onmouseover = function(evt) { obj.onmouseover(evt); }
 	this.element.onmouseout = function(evt) { obj.onmouseout(evt); }
+	this.element.onclick = function(evt) { obj.onclick(evt); }
 }
 // Static Variables for class Dancer
 dancevis.Dancer.__type = "dancer";
+dancevis.Dancer.tracker = null;
+dancevis.Dancer.tracking = {}
 // Static Methods for class Dancer
 dancevis.Dancer.__idUnique = dancevis.Util.counter(555, 1);
 
 // Methods for class Dancer
+dancevis.Dancer.updateTracking = function() {
+	if (!dancevis.Dancer.tracker) {
+		dancevis.Dancer.tracker = document.createElement("div");
+		dancevis.Dancer.tracker.className = "tracker";
+		document.body.appendChild(dancevis.Dancer.tracker);
+	}
+
+	var div = dancevis.Dancer.tracker;
+	div.innerHTML = "";
+	var table = document.createElement("table");
+	table.innerHTML = "<tr><th colspan='2'>Tracked Dancers</th></tr>";
+
+	var num = 0;
+	for(var dancerId in dancevis.Dancer.tracking) {
+		var dancer = dancevis.Dancer.tracking[dancerId];
+		num++;
+		var tr = document.createElement("tr");
+		var td = document.createElement("td");
+		var a = document.createElement("a");
+		tr.appendChild(td);
+		tr.appendChild(a)
+		a.innerHTML = "[x]";
+
+		a.onclick = (function(d) {
+		   return function(evt) { d.onclick(evt); }
+		})(dancer);
+		td.innerHTML = dancer.dancerName;
+
+		td.onmouseover = (function(d) {
+		    return function(evt) { d.onmouseover(evt); }
+		})(dancer);
+		td.onmouseout = (function(d) {
+		    return function(evt) { d.onmouseout(evt); }
+		})(dancer);
+		table.appendChild(tr);
+	}
+	div.appendChild(table);
+
+	if (num == 0) {
+		div.innerHTML = "";
+		div.style.display = "none";
+	}
+	else {
+		div.style.display = "block";
+	}
+}
+dancevis.Dancer.prototype.onclick = function(evt) {
+	var highlightColor = "#32cd32"; // limegreen
+	var highlightStrokeWidth = "4px"; // larger border
+
+	var color = this.element.style.stroke == highlightColor ? this.dancerColor : highlightColor;
+	var strokeWidth = this.element.style.strokeWidth == "4px" ? "1px" : highlightStrokeWidth;
+	this.element.style.strokeWidth = strokeWidth;
+	this.element.style.stroke = color;
+	if (dancevis.Dancer.tracking["dancer"+this.dancerId])
+		delete dancevis.Dancer.tracking["dancer"+this.dancerId];
+	else dancevis.Dancer.tracking["dancer"+this.dancerId] = this;
+	dancevis.Dancer.updateTracking();
+}
+
 dancevis.Dancer.prototype.onmouseover = function(evt) {
 	this.popup = document.createElement("div");
 	var table = document.createElement("table");
@@ -1392,11 +1494,15 @@ dancevis.TimeManager.prototype.annotateAt = function(position) {
 	return this;
 }
 dancevis.TimeManager.prototype.annotate = function(str, startTime, endTime) {
-	if (!startTime || startTime.__type != dancevis.Time.__type)
-		throw new dancevis.Error.DanceVisError("invalid startTime for annotation");
+	if (startTime === null && endTime === null) {
+	}
+	else {
+		if (!startTime || startTime.__type != dancevis.Time.__type)
+			throw new dancevis.Error.DanceVisError("invalid startTime for annotation");
 
-	if (!endTime || endTime.__type != dancevis.Time.__type) 
-		throw new dancevis.Error.DanceVisError("invalid endTime for annotation");
+		if (!endTime || endTime.__type != dancevis.Time.__type) 
+			throw new dancevis.Error.DanceVisError("invalid endTime for annotation");
+	}
 
 	if (!this.annotationDiv) {
 		this.annotationDiv = document.createElement("div");
@@ -1432,7 +1538,9 @@ dancevis.TimeManager.prototype.onTimeStep = function() {
 	}
 	for (var i = 0; i < this.annotations.length; i++) {
 		var obj = this.annotations[i];
-		var validTime = time.isBetween(this.annotations[i].startTime, this.annotations[i].endTime);
+		var begin = this.annotations[i].startTime;
+		var end = this.annotations[i].endTime;
+		var validTime = (begin === null && end === null) ? true : time.isBetween(begin, end);
 		if (!obj.shown && validTime) {
 			this.annotationDiv.appendChild(obj.element);
 			obj.shown = true;
