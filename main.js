@@ -956,9 +956,18 @@ dancevis.Group = function(groupOptions) {
 	var parent = dancevis.Util.defaultTo(groupOptions.parentGroup, null);
 	if (parent) this.setParent(parent);
 	this.groupName = dancevis.Util.defaultTo(groupOptions.groupName, "");
+	dancevis.Group.groups.push(this);
 }
 // Static Variables for class Group
 dancevis.Group.__type = "group";
+dancevis.Group.groups = [];
+dancevis.Group.findGroupByName = function(name) {
+	for (var i = 0; i < dancevis.Group.groups.length; i++) {
+		if (dancevis.Group.groups[i].getGroupName() == name)
+			return dancevis.Group.groups[i];
+	}
+	return null;
+}
 // Static Methods for class Shapes.GeometricShape
 dancevis.Group.__groupIdUnique = dancevis.Util.counter(1847, 1);
 
