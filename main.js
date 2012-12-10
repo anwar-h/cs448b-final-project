@@ -903,6 +903,7 @@ dancevis.Group = function(groupOptions) {
 	this.endCondition = null;
 	this.clientUpdateFunctions = null;
 	this.groupId = null;
+	this.groupName = null;
 	this.updateChildren = true;
 	this.myChildrenUpdate = true;
 	this.exitPoints = {};
@@ -954,6 +955,7 @@ dancevis.Group = function(groupOptions) {
 
 	var parent = dancevis.Util.defaultTo(groupOptions.parentGroup, null);
 	if (parent) this.setParent(parent);
+	this.groupName = dancevis.Util.defaultTo(groupOptions.groupName, "");
 }
 // Static Variables for class Group
 dancevis.Group.__type = "group";
