@@ -570,7 +570,7 @@ dancevis.Shapes.Line.prototype.angle = function() {
    return angle;
 }
 dancevis.Shapes.Line.prototype.isOnShape = function(position, err) {
-	err = err || .3;
+	err = err || 1;
 	
 	var endPoint = this.endPosition();
 	var dist = this.startPosition().distance(position);
@@ -1287,13 +1287,76 @@ dancevis.Dancer = function(dancerOptions) {
 	var obj = this;
 	this.element.onmouseover = function(evt) { obj.onmouseover(evt); }
 	this.element.onmouseout = function(evt) { obj.onmouseout(evt); }
+	this.element.onclick = function(evt) { obj.onclick(evt); }
 }
 // Static Variables for class Dancer
 dancevis.Dancer.__type = "dancer";
+dancevis.Dancer.tracker = null;
+dancevis.Dancer.tracking = {}
 // Static Methods for class Dancer
 dancevis.Dancer.__idUnique = dancevis.Util.counter(555, 1);
 
 // Methods for class Dancer
+dancevis.Dancer.updateTracking = function() {
+	if (!dancevis.Dancer.tracker) {
+		dancevis.Dancer.tracker = document.createElement("div");
+		dancevis.Dancer.tracker.className = "tracker";
+		document.body.appendChild(dancevis.Dancer.tracker);
+	}
+
+	var div = dancevis.Dancer.tracker;
+	div.innerHTML = "";
+	var table = document.createElement("table");
+	table.innerHTML = "<tr><th colspan='2'>Tracked Dancers</th></tr>";
+
+	var num = 0;
+	for(var dancerId in dancevis.Dancer.tracking) {
+		var dancer = dancevis.Dancer.tracking[dancerId];
+		num++;
+		var tr = document.createElement("tr");
+		var td = document.createElement("td");
+		var a = document.createElement("a");
+		tr.appendChild(td);
+		tr.appendChild(a)
+		a.innerHTML = "[x]";
+
+		a.onclick = (function(d) {
+		   return function(evt) { d.onclick(evt); }
+		})(dancer);
+		td.innerHTML = dancer.dancerName;
+
+		td.onmouseover = (function(d) {
+		    return function(evt) { d.onmouseover(evt); }
+		})(dancer);
+		td.onmouseout = (function(d) {
+		    return function(evt) { d.onmouseout(evt); }
+		})(dancer);
+		table.appendChild(tr);
+	}
+	div.appendChild(table);
+
+	if (num == 0) {
+		div.innerHTML = "";
+		div.style.display = "none";
+	}
+	else {
+		div.style.display = "block";
+	}
+}
+dancevis.Dancer.prototype.onclick = function(evt) {
+	var highlightColor = "#32cd32"; // limegreen
+	var highlightStrokeWidth = "4px"; // larger border
+
+	var color = this.element.style.stroke == highlightColor ? this.dancerColor : highlightColor;
+	var strokeWidth = this.element.style.strokeWidth == "4px" ? "1px" : highlightStrokeWidth;
+	this.element.style.strokeWidth = strokeWidth;
+	this.element.style.stroke = color;
+	if (dancevis.Dancer.tracking["dancer"+this.dancerId])
+		delete dancevis.Dancer.tracking["dancer"+this.dancerId];
+	else dancevis.Dancer.tracking["dancer"+this.dancerId] = this;
+	dancevis.Dancer.updateTracking();
+}
+
 dancevis.Dancer.prototype.onmouseover = function(evt) {
 	this.popup = document.createElement("div");
 	var table = document.createElement("table");
@@ -1412,11 +1475,15 @@ dancevis.TimeManager.prototype.annotateAt = function(position) {
 	return this;
 }
 dancevis.TimeManager.prototype.annotate = function(str, startTime, endTime) {
-	if (!startTime || startTime.__type != dancevis.Time.__type)
-		throw new dancevis.Error.DanceVisError("invalid startTime for annotation");
+	if (startTime === null && endTime === null) {
+	}
+	else {
+		if (!startTime || startTime.__type != dancevis.Time.__type)
+			throw new dancevis.Error.DanceVisError("invalid startTime for annotation");
 
-	if (!endTime || endTime.__type != dancevis.Time.__type) 
-		throw new dancevis.Error.DanceVisError("invalid endTime for annotation");
+		if (!endTime || endTime.__type != dancevis.Time.__type) 
+			throw new dancevis.Error.DanceVisError("invalid endTime for annotation");
+	}
 
 	if (!this.annotationDiv) {
 		this.annotationDiv = document.createElement("div");
@@ -1452,7 +1519,9 @@ dancevis.TimeManager.prototype.onTimeStep = function() {
 	}
 	for (var i = 0; i < this.annotations.length; i++) {
 		var obj = this.annotations[i];
-		var validTime = time.isBetween(this.annotations[i].startTime, this.annotations[i].endTime);
+		var begin = this.annotations[i].startTime;
+		var end = this.annotations[i].endTime;
+		var validTime = (begin === null && end === null) ? true : time.isBetween(begin, end);
 		if (!obj.shown && validTime) {
 			this.annotationDiv.appendChild(obj.element);
 			obj.shown = true;
