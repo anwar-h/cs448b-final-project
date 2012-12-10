@@ -963,6 +963,12 @@ dancevis.Group.__type = "group";
 dancevis.Group.__groupIdUnique = dancevis.Util.counter(1847, 1);
 
 // Methods for class Group
+dancevis.Group.prototype.getGroupName = function() {
+	return this.groupName;
+}
+dancevis.Group.prototype.setGroupName = function(name) {
+	return this.groupName = name;
+}
 dancevis.Group.prototype.updateChildrenBasedOnMyShape = function(currentTime) {
 	if (!currentTime || currentTime.__type != dancevis.Time.__type) {
 		throw new dancevis.Error.DanceVisError("currentTime is not of type time");
