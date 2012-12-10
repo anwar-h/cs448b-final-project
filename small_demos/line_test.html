@@ -96,7 +96,6 @@ var line1 = new dancevis.Group({
 					speed: new dancevis.Speed({speed:70}),
 					orientation: new dancevis.Orientation(0)
 				});
-line1.showShapeOnScreen(true);
 
 // line2 group
 var vertical_line = new dancevis.Shapes.Line(new dancevis.Position(-100,140), 300, new dancevis.Orientation(270, false));
@@ -109,6 +108,17 @@ var line2 = new dancevis.Group({
 					orientation: new dancevis.Orientation(-90, false)
 				});
 
+var connector = new dancevis.Shapes.Line(vertical_line.endPoint(),
+							vertical_line.endPoint().distance(horizontal_line.startPoint()),
+							);
+var line3 = new dancevis.Group({
+					shape: vertical_line,
+					startTime: new dancevis.Time({seconds:0}),
+					endTime: new dancevis.Time({seconds:8}),
+					position: vertical_line.startPosition(),
+					speed: new dancevis.Speed({speed:70}),
+					orientation: new dancevis.Orientation(-90, false)
+				});
 
 
 // Outer 
