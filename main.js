@@ -43,8 +43,9 @@ dancevis.Util.defaultNum = function(value, defaultNumValue) {
 	}
 	return num;
 }
-dancevis.Util.floatsEqual = function(one, two) {
-	return Math.abs(one - two) < 0.000001;
+dancevis.Util.floatsEqual = function(one, two, err) {
+	err = err || 0.000001;
+	return Math.abs(one - two) < err;
 }
 dancevis.Util.counter = function(startValue, incrementStep) {
 	var count = dancevis.Util.defaultNum(startValue, 0);
@@ -109,7 +110,7 @@ dancevis.Error.log = function(err) {
 dancevis.Error.DanceVisError = function(message) {
 	var defaultMessage = "'An error has occured inside dancevis library'";
 	this.name = "DanceVisError";
-	this.message = "function "+arguments.callee.caller.name+"(): '"+message+"'" || defaultMessage;
+	this.message = "'"+message+"'" || defaultMessage;
 }
 dancevis.Error.DanceVisError.prototype = new Error();
 dancevis.Error.DanceVisError.prototype.constructor = dancevis.Error.DanceVisError;
@@ -164,7 +165,7 @@ dancevis.Position.prototype.positionInDirection = function(distance, angle) {
 dancevis.Position.prototype.equals = function(other) {
 	if (!other || other.__type != dancevis.Position.__type)
 		throw new dancevis.Error.DanceVisError("wrong type supplied");
-	return (other.x == this.x && other.y == this.y);
+	return (dancevis.Util.floatsEqual(other.x, this.x) && dancevis.Util.floatsEqual(other.y, this.y));
 }
 dancevis.Position.prototype.copy = function() {
 	return new dancevis.Position(this.x, this.y);
@@ -195,6 +196,18 @@ dancevis.Orientation = function(angle, isRadians) {
 		if (!isRadians) theta = dancevis.Orientation.degreesToRadians(theta);
 	}
 	this.angle = theta;
+
+	var twoPi = (2 * Math.PI);
+	var modAngle = theta % twoPi;
+
+	var a = theta;
+	if (modAngle == 0 && theta > 0) {
+		a = twoPi;
+	}
+	else {
+		a = modAngle;
+	}
+	this.angle = (a < 0) ? a + twoPi : a;
 }
 // Static Variables for class Orientation
 dancevis.Orientation.__type = "orientation";
@@ -204,6 +217,14 @@ dancevis.Orientation.radiansToDegrees = function(radians) {
 }
 dancevis.Orientation.degreesToRadians = function(degrees) {
 	return degrees * 2 * Math.PI / 360.0;
+}
+dancevis.Orientation.positionsToOrientation = function(pos1, pos2) {
+	var x = pos2.x - pos1.x;
+	var y = pos2.y - pos1.y;
+	var atan = Math.atan(y / x);
+
+	if (x < 0) atan += Math.PI;
+	return new dancevis.Orientation(atan);
 }
 // Methods for class Orientation
 dancevis.Orientation.prototype.inRadians = function() {
@@ -237,10 +258,14 @@ dancevis.Orientation.prototype.isBetween = function(angle1, angle2) {
 	if (!angle2 || angle2.__type != dancevis.Orientation.__type)
 		throw new dancevis.Error.DanceVisError("wrong type supplied");
 
-	
+	var me = this.angle;
+	var a1 = angle1.angle;
+	var a2 = angle2.angle;
 
-	console.log("STILL NEED TO DO THIS");
-	return true;
+	var smaller = a1 < a2 ? a1 : a2;
+	var larger  = a1 > a2 ? a1 : a2;
+
+	return (me >= smaller && me <= larger);
 }
 dancevis.Orientation.prototype.toString = function() {
 	var numDecimal = 2;
@@ -544,22 +569,24 @@ dancevis.Shapes.Line.prototype.length = function() {
 dancevis.Shapes.Line.prototype.angle = function() {
    return angle;
 }
-dancevis.Shapes.Line.prototype.distanceToLine = function() {
-     
-}
-
 dancevis.Shapes.Line.prototype.isOnShape = function(position, err) {
-	err = err || .001;
-   var endPoint = this.endPosition();
-   var a = (endPoint.y - this.start_position.y) / (endPoint.x - this.start_position.x);
-   var b = this.start_position.y - a * this.start_position.x;
-   if ( Math.abs(position.y - (a*position.x+b)) < err){
-	  return true;
-      if(position.x >= this.start_position.x && position.x <= endPoint.x){
-	       return true;
-	  }
-   }
-   return false;
+	err = err || .3;
+	
+	var endPoint = this.endPosition();
+	var dist = this.startPosition().distance(position);
+	if (dancevis.Util.floatsEqual(endPoint.x, this.start_position.x, 1)) {
+		return (dancevis.Util.floatsEqual(this.start_position.x, position.x, 1) && dist <= this.length);
+	}
+	else {
+		var a = (endPoint.y - this.start_position.y) / (endPoint.x - this.start_position.x);
+		var b = this.start_position.y - a * this.start_position.x;
+		if (dancevis.Util.floatsEqual(position.y - (a*position.x+b), 0, err)) { // lie on the line
+			if(dist <= this.length) {
+				return true;
+			}
+		}
+	}
+	return false;
 }
 dancevis.Shapes.Line.prototype.copy = function() {
 	return new dancevis.Shapes.Line(this.start_position.copy(), this.length, this.angle.copy());
@@ -600,6 +627,7 @@ dancevis.Shapes.Circle = function(center, radius, startAngle, stopAngle) {
 	this.radius = dancevis.Util.defaultNum(radius, 10);
 	startAngle = dancevis.Util.defaultTo(startAngle, new dancevis.Orientation(0));
 	stopAngle = dancevis.Util.defaultTo(stopAngle, new dancevis.Orientation(Math.PI *2));
+
 	if (center.__type != dancevis.Position.__type ||
 		startAngle.__type != dancevis.Orientation.__type ||
 		stopAngle.__type != dancevis.Orientation.__type) {
@@ -648,6 +676,14 @@ dancevis.Shapes.Circle.prototype.nextPositionAndOrientation = function(startPosi
 		throw new dancevis.Error.DanceVisError("wrong type supplied");
 	}
 
+	var positionAngle = this.angleFromPosition(startPosition);
+	if (!positionAngle.isBetween(this.startAngle, this.stopAngle)) {
+		return {
+			position: startPosition,
+			orientation: startOrientation
+		}
+	}
+
 	startOrientation = startOrientation || null;
 	var dist = dt.inSeconds() * speed.speed();
 	var radiansCovered = dist / this.radius;
@@ -681,12 +717,7 @@ dancevis.Shapes.Circle.prototype.angleFromPosition = function(position) {
 	if (this.center.equals(position))
 		return new dancevis.Orientation(0);
 
-	var x = position.x - this.center.x;
-	var y = position.y - this.center.y;
-	var atan = Math.atan(y / x);
-
-	if (x < 0) atan += Math.PI;
-	return new dancevis.Orientation(atan);
+	return dancevis.Orientation.positionsToOrientation(position, this.center);
 }
 dancevis.Shapes.Circle.prototype.arcLength = function(angle) {
 	if (!angle || angle.__type != dancevis.Orientation.__type)
@@ -713,16 +744,13 @@ dancevis.Shapes.Circle.prototype.isOnShape = function(position, err) {
 	if (!position || position.__type != dancevis.Position.__type)
 		throw new dancevis.Error.DanceVisError("wrong type supplied");
 
-	err = err || 0;
+	err = err || 0.5;
 
 	var distFromCenter = this.center.distance(position);
 	if (Math.abs(distFromCenter - this.radius) > err) {
 		return false;
 	}
 	var positionAngle = this.angleFromPosition(position);
-	var stopIsBigger = this.startAngle.inRadians() < this.stopAngle.inRadians();
-	var big = stopIsBigger ? this.stopAngle : this.startAngle;
-	var small = stopIsBigger ? this.startAngle : this.stopAngle;
 	if (!positionAngle.isBetween(this.startAngle, this.stopAngle)) {
 		return false;
 	}
@@ -917,7 +945,8 @@ dancevis.Group = function(groupOptions) {
 	this.lastTime = this.startTime.copy();
 
 	if (groupOptions.position) this.setPosition(groupOptions.position.copy());
-	if (groupOptions.position === null) this.setPosition(new dancevis.Position(10000000000,10000000000));
+	if (groupOptions.position === null) this.setPosition(new dancevis.Position(10000000000, 10000000000));
+
 	this.setOrientation(groupOptions.orientation.copy());
 
 	this.clientUpdateFunctions = {};
@@ -971,10 +1000,11 @@ dancevis.Group.prototype.updateChildrenBasedOnMyShape = function(currentTime) {
 
 			if (!isEnd) {
 				// calculate new child position based on shape
-				var update = this.shape.nextPositionAndOrientation(child.getPosition(), child.getOrientation(), dt, this.speed);
-				
-				// set child position to the new one
-				child.setMyPositionAndModifyChildren(update.position, update.orientation);
+				if (this.shape.isOnShape(child.getPosition())) { 
+					var update = this.shape.nextPositionAndOrientation(child.getPosition(), child.getOrientation(), dt, this.speed);
+					// set child position to the new one
+					child.setMyPositionAndModifyChildren(update.position, update.orientation);
+				}
 			}
 		}
 	}
@@ -1017,6 +1047,10 @@ dancevis.Group.prototype.getOrientation = function() {
 	return this.shape.getOrientation();
 }
 dancevis.Group.prototype.setOrientation = function(orientation) {
+	if (this.parentGroup && this.parentGroup.shape.shapeTypeId == dancevis.Shapes.ShapeTypeId.CIRCLE) {
+		var newPos = this.parentGroup.shape.getPosition().positionInDirection(this.parentGroup.shape.radius, orientation);
+		this.setPosition(newPos);
+	}
 	this.shape.setOrientation(orientation);
 }
 dancevis.Group.prototype.getPosition = function() {
@@ -1081,22 +1115,6 @@ dancevis.Group.prototype.removeChildById = function(groupId) {
 		}
 	}
 }
-dancevis.Group.prototype.onmouseover = function(evt) {
-	this.popup = document.createElement("div");
-	var table = document.createElement("table");
-	var row1 = "<tr><th>"+this.dancerName+"</th></tr>";
-	var row2 = "<tr><td class='value'>"+this.getPosition().toString()+"</td></tr>";
-	var row3 = "<tr><td class='value'>"+this.getOrientation().inDegrees().toFixed(2)+" degrees</td></tr>";
-	table.innerHTML = row1 + row2 + row3;
-	this.popup.className = "popup";
-	this.popup.style.left = (evt.pageX + 5) + "px";
-	this.popup.style.top = (evt.pageY) + "px";
-	this.popup.appendChild(table);
-	document.body.appendChild(this.popup);
-}
-dancevis.Group.prototype.onmouseout = function(evt) {
-	document.body.removeChild(this.popup);
-}
 dancevis.Group.prototype.addExitPoint = function(groupEPObj) {
 	if (!groupEPObj)
 		throw new dancevis.Error.DanceVisError("no parameter provided");
@@ -1124,6 +1142,12 @@ dancevis.Group.prototype.addExitPoint = function(groupEPObj) {
 	if (groupEPObj.endTime && groupEPObj.endTime &&
 		groupEPObj.endTime.inMilliseconds() < groupEPObj.startTime.inMilliseconds())
 		throw new dancevis.Error.DanceVisError("endTime is earlier than startTime");
+
+	for (var name in this.exitPoints) {
+		if (name == groupEPObj.name) {
+			throw new dancevis.Error.DanceVisError("that name is already in use");
+		}
+	}
 
 	groupEPObj.element = null;
 	if (groupEPObj.showOnScreen) {
@@ -1290,12 +1314,27 @@ dancevis.Dancer.prototype.getPosition = function() {
 	return this.position;
 }
 dancevis.Dancer.prototype.setPosition = function(position) {
+	var screenPosition = position.screenCoords();
+	var elementType = this.element.tagName;
+	if (elementType == "circle") {
+		this.element.cx.baseVal.value = screenPosition.x;
+		this.element.cy.baseVal.value = screenPosition.y;
+	}
+	else if (elementType == "div") {
+		this.element.style.left = screenPosition.x;
+		this.element.style.top = screenPosition.y;
+	}
+
 	this.position = position;
 }
 dancevis.Dancer.prototype.getOrientation = function() {
 	return this.orientation;
 }
 dancevis.Dancer.prototype.setOrientation = function(orientation) {
+	if (this.parentGroup && this.parentGroup.shape.shapeTypeId == dancevis.Shapes.ShapeTypeId.CIRCLE) {
+		var newPos = this.parentGroup.shape.getPosition().positionInDirection(this.parentGroup.shape.radius, orientation);
+		this.setPosition(newPos);
+	}
 	this.orientation = orientation;
 }
 dancevis.Dancer.prototype.setParent = function(parent) {
@@ -1312,20 +1351,8 @@ dancevis.Dancer.prototype.updateChildrenBasedOnMyShape = function(currentTime) {
 	//do nothing
 }
 dancevis.Dancer.prototype.setMyPositionAndModifyChildren = function(position, newOrientation) {
-	this.position = position;
 	this.orientation = newOrientation;
-
-	position = position.screenCoords();
-	var elementType = this.element.tagName;
-	if (elementType == "circle") {
-		//console.log(this.element.tagName);
-		this.element.cx.baseVal.value = position.x;
-		this.element.cy.baseVal.value = position.y;
-	}
-	else if (elementType == "div") {
-		this.element.style.left = position.x;
-		this.element.style.top = position.y;
-	}
+	this.setPosition(position);
 }
 
 
