@@ -101,22 +101,22 @@ var line1 = new dancevis.Group({
 var vertical_line = new dancevis.Shapes.Line(new dancevis.Position(-100,140), 300, new dancevis.Orientation(270, false));
 var line2 = new dancevis.Group({
 					shape: vertical_line,
-					startTime: new dancevis.Time({seconds:0}),
-					endTime: new dancevis.Time({seconds:8}),
+					startTime: line1.startTime,
+					endTime: line1.endTime,
 					position: vertical_line.startPosition(),
-					speed: new dancevis.Speed({speed:70}),
+					speed: line1.speed,
 					orientation: new dancevis.Orientation(-90, false)
 				});
 
-var connector = new dancevis.Shapes.Line(vertical_line.endPoint(),
-							vertical_line.endPoint().distance(horizontal_line.startPoint()),
-							dancevis.Orientation.positionsToOrientation(vertical_line.endPoint(), horizontal_line.startPoint()));
+var connector = new dancevis.Shapes.Line(vertical_line.endPosition(),
+							vertical_line.endPosition().distance(horizontal_line.startPosition()),
+							dancevis.Orientation.positionsToOrientation(vertical_line.endPosition(), horizontal_line.startPosition()));
 var line3 = new dancevis.Group({
 					shape: connector,
-					startTime: new dancevis.Time({seconds:0}),
-					endTime: new dancevis.Time({seconds:8}),
-					position: vertical_line.startPosition(),
-					speed: new dancevis.Speed({speed:70}),
+					startTime: line1.startTime,
+					endTime: line1.endTime,
+					position: vertical_line.endPosition(),
+					speed: line1.speed,
 					orientation: new dancevis.Orientation(-90, false)
 				});
 
@@ -138,6 +138,15 @@ outer.addExitPoint({
 	nextGroup: line2,
 	showOnScreen: true,
 	name: "to_line2"
+});
+
+line2.addExitPoint({
+	startTime: dancevis.Time.now(),
+	endTime: line3.endTime,
+	position: connector.startPosition(),
+	nextGroup: line3,
+	showOnScreen: true,
+	name: "to_connector"
 });
 
 

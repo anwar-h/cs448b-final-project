@@ -717,7 +717,7 @@ dancevis.Shapes.Circle.prototype.angleFromPosition = function(position) {
 	if (this.center.equals(position))
 		return new dancevis.Orientation(0);
 
-	return dancevis.Orientation.positionsToOrientation(position, this.center);
+	return dancevis.Orientation.positionsToOrientation(this.center, position);
 }
 dancevis.Shapes.Circle.prototype.arcLength = function(angle) {
 	if (!angle || angle.__type != dancevis.Orientation.__type)
