@@ -1292,12 +1292,27 @@ dancevis.Dancer.prototype.getPosition = function() {
 	return this.position;
 }
 dancevis.Dancer.prototype.setPosition = function(position) {
+	var screenPosition = position.screenCoords();
+	var elementType = this.element.tagName;
+	if (elementType == "circle") {
+		this.element.cx.baseVal.value = screenPosition.x;
+		this.element.cy.baseVal.value = screenPosition.y;
+	}
+	else if (elementType == "div") {
+		this.element.style.left = screenPosition.x;
+		this.element.style.top = screenPosition.y;
+	}
+
 	this.position = position;
 }
 dancevis.Dancer.prototype.getOrientation = function() {
 	return this.orientation;
 }
 dancevis.Dancer.prototype.setOrientation = function(orientation) {
+	if (this.parentGroup && this.parentGroup.shape.shapeTypeId == dancevis.Shapes.ShapeTypeId.CIRCLE) {
+		var newPos = this.parentGroup.shape.getPosition().positionInDirection(this.parentGroup.shape.radius, orientation);
+		this.setPosition(newPos);
+	}
 	this.orientation = orientation;
 }
 dancevis.Dancer.prototype.setParent = function(parent) {
@@ -1314,20 +1329,8 @@ dancevis.Dancer.prototype.updateChildrenBasedOnMyShape = function(currentTime) {
 	//do nothing
 }
 dancevis.Dancer.prototype.setMyPositionAndModifyChildren = function(position, newOrientation) {
-	this.position = position;
 	this.orientation = newOrientation;
-
-	position = position.screenCoords();
-	var elementType = this.element.tagName;
-	if (elementType == "circle") {
-		//console.log(this.element.tagName);
-		this.element.cx.baseVal.value = position.x;
-		this.element.cy.baseVal.value = position.y;
-	}
-	else if (elementType == "div") {
-		this.element.style.left = position.x;
-		this.element.style.top = position.y;
-	}
+	this.setPosition(position);
 }
 
 
