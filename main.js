@@ -602,8 +602,6 @@ dancevis.Shapes.Line.prototype.showShapeOnScreen = function(bool) {
 	if (bool) {
 		var startPoint = this.start_position.screenCoords();
 		var endPoint = this.endPosition().screenCoords();
-		console.log("start pos: " + startPoint.x + " , " + startPoint.y);
-		console.log("end pos: " + endPoint.x + " , " + endPoint.y);
 		var d3elem = d3.select("g").append("svg:line")
 					.attr("x1", startPoint.x)
 					.attr("y1", startPoint.y)
@@ -1007,9 +1005,12 @@ dancevis.Group.prototype.updateChildrenBasedOnMyShape = function(currentTime) {
 
 			// check for exit points
 			for (var epObjName in this.exitPoints) {
+			 //  console.log(epObjName);
 				var ep = this.exitPoints[epObjName];
 				var validTime = (ep.startTime === null && ep.endTime === null) || currentTime.isBetween(ep.startTime, ep.endTime);
 				var validDist = child.getPosition().distance(ep.position) <= 1;
+			  //  var a = child.getPosition().distance(ep.position);
+				//console.log("pos: " + ep.position.x+ " " +ep.position.y);
 				if (validTime && validDist) {
 					//console.log(epObjName + " " + this.groupName + "=>" + ep.nextGroup.groupName);
 					child.setParent(ep.nextGroup);
