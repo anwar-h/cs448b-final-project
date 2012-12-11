@@ -144,7 +144,10 @@ dancevis.Position.screenOriginIs = function(left, top) {
 	}
 	dancevis.Position.screenOriginLeft = left;
 	dancevis.Position.screenOriginTop = top;
-	DrawBackground(left, top);
+	var xboxsize = 36;
+	var yboxsize = 36;
+	dancevis.Util.DrawBackground(left, top, xboxsize, yboxsize);
+	dancevis.Util.DrawScale(left, top, xboxsize, yboxsize);
 }
 dancevis.Position.screenToModelCoords = function(left, top) {
 	return new dancevis.Position(left - dancevis.Position.screenOriginLeft, -1 * (top - dancevis.Position.screenOriginTop));
@@ -1499,7 +1502,7 @@ dancevis.TimeManager.prototype.reset = function() {
 
 
 
-function DrawBackground(left, top){
+dancevis.Util.DrawBackground = function(left, top, yboxsize, xboxsize){
 	var g = d3.select("g").append("g")
 				.attr("class", "lines")
 	var i = left, 
@@ -1511,7 +1514,6 @@ function DrawBackground(left, top){
 	var h = document.body.offsetHeight;
 
 	var color = "rgb(212,230,242)";
-	var boxsize = 36;
 
 	var originline = g.append("svg:line")
 		    .attr("x1", left)
@@ -1536,7 +1538,7 @@ function DrawBackground(left, top){
 		    .attr("y2", h)
 		    .style("stroke", color)
 			.style("stroke-width","0.75px");
-			i -= boxsize;
+			i -= xboxsize;
 	}
 	while(j > 0){
 		var myLine = g.append("svg:line")
@@ -1546,7 +1548,7 @@ function DrawBackground(left, top){
 		    .attr("y2", j)
 		    .style("stroke", color)
 			.style("stroke-width","0.75px");
-			j -= boxsize;
+			j -= yboxsize;
 	}
 	while(k < w){
 		var myLine = g.append("svg:line")
@@ -1556,7 +1558,8 @@ function DrawBackground(left, top){
 		    .attr("y2", h)
 		    .style("stroke", color)
 			.style("stroke-width","0.75px");
-			k += boxsize;
+			k += xboxsize;
+		
 	}
 
 	while(m < h){
@@ -1567,6 +1570,45 @@ function DrawBackground(left, top){
 		    .attr("y2", m)
 		    .style("stroke", color)
 			.style("stroke-width","0.75px");
-			m += boxsize;
+			m += yboxsize;
 	}
+
 }
+
+dancevis.Util.DrawScale = function(left, top, yboxsize, xboxsize){
+	var g = d3.select("g").append("g")
+				.attr("class", "lines");
+
+	var xscale = g.append("svg:line")
+		    .attr("x1", left - xboxsize * 14)
+		    .attr("y1", top + yboxsize * 6)
+		    .attr("x2", left - xboxsize * 13)
+		    .attr("y2", top + yboxsize * 6)
+		    .style("stroke", "grey")
+			.style("stroke-width","1px");
+
+	var yscale = g.append("svg:line")
+		    .attr("x1", left - xboxsize * 13)
+		    .attr("y1", top + yboxsize * 6)
+		    .attr("x2", left - xboxsize * 13)
+		    .attr("y2", top + yboxsize * 5)
+		    .style("stroke", "grey")
+			.style("stroke-width","1px");
+
+
+	var xlabel = g.append("text")
+		.attr("class", "scaletext")
+		.attr("x", left - xboxsize * 13.5)
+		.attr("y", top + yboxsize * 6)
+		.attr("text-anchor", "middle")
+		.text(xboxsize + " px");
+
+	var ylabel = g.append("text")
+		.attr("class", "scaletext")
+		.attr("x", left - xboxsize * 13)
+		.attr("y", top + yboxsize * 5.5)
+		.attr("text-anchor","end")
+		.text(yboxsize + " px");
+
+}
+
