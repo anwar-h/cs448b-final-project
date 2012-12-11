@@ -6,6 +6,25 @@
 		.attr("width", w)
 		.attr("height", h)
 		.append("svg:g")
+
+	document.body.onkeypress = (function() {
+		var playing = false;
+		return function(evt) {
+			if (evt.keyCode != 32) return;
+			var playBtn = document.getElementById("play_button");
+			var pauseBtn = document.getElementById("pause_button");
+			if (playing) {
+				playing = false;
+				pauseBtn.onclick();
+			}
+			else {
+				playing = true;
+				playBtn.onclick();
+			}
+		}
+	})();
+
+	//document.body.onkeypress = function(evt) { console.log(evt.keyCode); }
 })();
 
 
@@ -1009,7 +1028,7 @@ dancevis.Group.prototype.updateChildrenBasedOnMyShape = function(currentTime) {
 			for (var epObjName in this.exitPoints) {
 				var ep = this.exitPoints[epObjName];
 				var validTime = (ep.startTime === null && ep.endTime === null) || currentTime.isBetween(ep.startTime, ep.endTime);
-				var validDist = child.getPosition().distance(ep.position) <= 1;
+				var validDist = child.getPosition().distance(ep.position) <= 3;
 				if (validTime && validDist) {
 					//console.log(epObjName + " " + this.groupName + "=>" + ep.nextGroup.groupName);
 					child.setParent(ep.nextGroup);
@@ -1157,10 +1176,10 @@ dancevis.Group.prototype.addExitPoint = function(groupEPObj) {
 		if (!groupEPObj.endTime || groupEPObj.endTime.__type != dancevis.Time.__type) 
 			throw new dancevis.Error.DanceVisError("endTime is not of type time");		
 	}
-	if (!this.shape.isOnShape(groupEPObj.position, 1))
+	if (!this.shape.isOnShape(groupEPObj.position, 3))
 		throw new dancevis.Error.DanceVisError("position is not on the this group's shape");
 
-	if (!groupEPObj.nextGroup.shape.isOnShape(groupEPObj.position, 1))
+	if (!groupEPObj.nextGroup.shape.isOnShape(groupEPObj.position, 3))
 		throw new dancevis.Error.DanceVisError("exit position is not on the next group's shape");
 
 	if (groupEPObj.endTime && groupEPObj.endTime &&

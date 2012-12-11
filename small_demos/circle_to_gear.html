@@ -7,6 +7,7 @@
 <script src="../dancevis.js"></script>
 <script type="text/javascript">
 
+
  var createGroupName = function(k) {
 	var nameString = "";
     if(k%2 ==1) nameString += "bot";
@@ -74,7 +75,7 @@ for(var k = 0; k < 4; k++){
 					shape: gear,
 					startTime: dancevis.Time.now(),
 					endTime: new dancevis.Time({seconds:40}),
-					speed: new dancevis.Speed({speed:70}),
+					speed: new dancevis.Speed({speed:40}),
 					position: new dancevis.Position(pos.x, pos.y + offset),
 					orientation: new dancevis.Orientation(0),
 					groupName: (groupName + "1")
@@ -84,7 +85,7 @@ for(var k = 0; k < 4; k++){
 					shape: gear,
 					startTime: dancevis.Time.now(),
 					endTime: new dancevis.Time({seconds:40}),
-					speed: new dancevis.Speed({speed:70}),
+					speed: new dancevis.Speed({speed:57}),
 					position: new dancevis.Position(pos.x, pos.y + offset),
 					orientation: new dancevis.Orientation(0),
 					groupName: (groupName + "2")
@@ -99,12 +100,54 @@ for(var k = 0; k < 4; k++){
 	   smallgear2.shape.clockwise = false;
 	}
 	
+	smallgear.setOnChildAddition(function(child, index) {
+		if (index == 0) return;
+		return;
+		var obj = this;
+		var intervalId;
+		var func = (function(child) {
+			var orientation = child.getOrientation();
+			return function() {
+				var time = dancevis.Time.now();
+				var diff = time.inMilliseconds() - obj.lastChildTimeAdded.inMilliseconds();
+				if (Math.abs(diff % 1000) < 5) {
+					obj.lastChildTimeAdded = time;
+					clearInterval(intervalId);
+				} else child.setOrientation(orientation);
+			}
+		})(child);
+
+		intervalId = setInterval(function() { func(); }, 5);
+	});
+	smallgear2.setOnChildAddition(function(child, index) {
+		if (index == 0) return;
+		return; 
+
+		var obj = this;
+		var intervalId;
+		var func = (function(child) {
+			var orientation = child.getOrientation();
+			return function() {
+				var time = dancevis.Time.now();
+				var diff = time.inMilliseconds() - obj.lastChildTimeAdded.inMilliseconds();
+				if (Math.abs(diff % 500) < 5) {
+					obj.lastChildTimeAdded = time;
+					clearInterval(intervalId);
+				} else child.setOrientation(orientation);
+			}
+		})(child);
+
+		intervalId = setInterval(function() { func(); }, 5);
+	});
+	
+	/*
 	smallgear.setUpdateFunction("remove", new dancevis.Time({seconds:1}), 
-	                           new dancevis.Time({seconds:10}), function() {
+	                           new dancevis.Time({seconds:20}), function() {
 	                           removal.call(this);});
 	smallgear2.setUpdateFunction("remove", new dancevis.Time({seconds:1}), 
-	                           new dancevis.Time({seconds:10}), function() {
+	                           new dancevis.Time({seconds:20}), function() {
 	                           removal.call(this);});
+	  */                      
 tmanager.scheduleGroup(smallgear)
 .scheduleGroup(smallgear2);
 }
@@ -120,8 +163,10 @@ tmanager.scheduleGroup(smallgear)
   var botLeft2 = dancevis.Group.findGroupByName("botLeft2");
   var botRight2 = dancevis.Group.findGroupByName("botRight2");
 
+var gearStart = new dancevis.Time({seconds:20});
+
 topRight1.addExitPoint({
-	startTime: dancevis.Time.now(),
+	startTime: gearStart,
 	endTime: topRight1.endTime,
 	position: new dancevis.Position(0, 65),
 	nextGroup: topLeft1,
@@ -130,7 +175,7 @@ topRight1.addExitPoint({
 });
 // TopLeft2 to TopRight2
 topLeft2.addExitPoint({
-	startTime: dancevis.Time.now(),
+	startTime: gearStart,
 	endTime: topLeft2.endTime,
 	position: new dancevis.Position(0, 65),
 	nextGroup: topRight2,
@@ -141,7 +186,7 @@ topLeft2.addExitPoint({
 
 // BotRight1 to BotLeft1
 botRight1.addExitPoint({
-	startTime: dancevis.Time.now(),
+	startTime: gearStart,
 	endTime: botRight1.endTime,
 	position: new dancevis.Position(0, -65),
 	nextGroup: botLeft1,
@@ -150,7 +195,7 @@ botRight1.addExitPoint({
 });
 // BotLeft2 to BotRight2
 botLeft2.addExitPoint({
-	startTime: dancevis.Time.now(),
+	startTime: gearStart,
 	endTime: botLeft2.endTime,
 	position: new dancevis.Position(0, -65),
 	nextGroup: botRight2,
@@ -315,33 +360,27 @@ var outer_follows = new dancevis.Group({
 					shape: outercircle,
 					startTime: dancevis.Time.now(),
 					endTime: new dancevis.Time({seconds:20}),
-					speed: new dancevis.Speed({speed:70}),
+					speed: new dancevis.Speed({speed:40}),
 					position: outercircle.center,
 					orientation: new dancevis.Orientation(0)
 				});
 
 outer_follows.setUpdateFunction("clockwise", new dancevis.Time({seconds:5}), outer_follows.endTime, function() {
-	this.shape.clockwise = true;
+	//this.shape.clockwise = true;
 });
 
 outer_follows.addExitPoint({
 	startTime: dancevis.Time.now(),
 	endTime: topLeft2.endTime,
-	position: (new dancevis.Position(0,0))
-	          .positionInDirection(outercircle.radius, new dancevis.Orientation(45, false)),
+	position: topRight2.shape.positionAtAngle(new dancevis.Orientation(45, false)),
 	nextGroup: topRight2,
 	showOnScreen: true,
 	name: "follows_to_TopRight2"
 });
- 
- var a = topLeft2.getPosition()
-	         .positionInDirection(gear.radius, new dancevis.Orientation(135, false));
-
 outer_follows.addExitPoint({
 	startTime: dancevis.Time.now(),
 	endTime: topLeft2.endTime,
-	position: (new dancevis.Position(0,0))
-	          .positionInDirection(outercircle.radius, new dancevis.Orientation(135, false)),
+	position: topLeft2.shape.positionAtAngle(new dancevis.Orientation(135, false)),
 	nextGroup: topLeft2,
 	showOnScreen: true,
 	name: "follows_to_TopLeft2"
@@ -349,18 +388,15 @@ outer_follows.addExitPoint({
 outer_follows.addExitPoint({
 	startTime: dancevis.Time.now(),
 	endTime: topLeft2.endTime,
-	position: (new dancevis.Position(0,0))
-	          .positionInDirection(outercircle.radius, new dancevis.Orientation(-45, false)),
+	position: botRight2.shape.positionAtAngle(new dancevis.Orientation(-45, false)),
 	nextGroup: botRight2,
 	showOnScreen: true,
 	name: "follows_to_BotRight2"
 });
-
 outer_follows.addExitPoint({
 	startTime: dancevis.Time.now(),
 	endTime: topLeft2.endTime,
-	position: (new dancevis.Position(0,0))
-	          .positionInDirection(outercircle.radius, new dancevis.Orientation(-135, false)),
+	position: botLeft2.shape.positionAtAngle(new dancevis.Orientation(-145, false)),
 	nextGroup: botLeft2,
 	showOnScreen: true,
 	name: "follows_to_BotLeft2"
@@ -369,13 +405,46 @@ var outer_leads = new dancevis.Group({
 					shape: outercircle,
 					startTime: dancevis.Time.now(),
 					endTime: new dancevis.Time({seconds:20}),
-					speed: new dancevis.Speed({speed:70}),
+					speed: new dancevis.Speed({speed:40}),
 					position: outercircle.center,
 					orientation: new dancevis.Orientation(0)
 				});
 
+outer_leads.addExitPoint({
+	startTime: dancevis.Time.now(),
+	endTime: topLeft2.endTime,
+	position: topRight1.shape.positionAtAngle(new dancevis.Orientation(45, false)),
+	nextGroup: topRight1,
+	showOnScreen: true,
+	name: "follows_to_TopRight1"
+});
+outer_leads.addExitPoint({
+	startTime: dancevis.Time.now(),
+	endTime: topLeft1.endTime,
+	position: topLeft1.shape.positionAtAngle(new dancevis.Orientation(135, false)),
+	nextGroup: topLeft1,
+	showOnScreen: true,
+	name: "follows_to_TopLeft1"
+});
+outer_leads.addExitPoint({
+	startTime: dancevis.Time.now(),
+	endTime: topLeft1.endTime,
+	position: botRight1.shape.positionAtAngle(new dancevis.Orientation(-45, false)),
+	nextGroup: botRight1,
+	showOnScreen: true,
+	name: "follows_to_BotRight1"
+});
+outer_leads.addExitPoint({
+	startTime: dancevis.Time.now(),
+	endTime: topLeft1.endTime,
+	position: botLeft1.shape.positionAtAngle(new dancevis.Orientation(-145, false)),
+	nextGroup: botLeft1,
+	showOnScreen: true,
+	name: "follows_to_BotLeft1"
+});
+
 outer_leads.setUpdateFunction("clockwise", new dancevis.Time({seconds:5}), outer_leads.endTime, function() {
-	this.shape.clockwise = true;
+	//this.shape.clockwise = true;
 });
 
 
@@ -417,8 +486,10 @@ for(var i = 0; i < 16; i++){
 	       dancerColor: "steelBlue",
 		   dancerSize: dancevis.DancerShapeSize.LARGE
    });
-   dancer1.setParent(coupleF);
-   dancer2.setParent(coupleL);
+   //dancer1.setParent(coupleF);
+   //dancer2.setParent(coupleL);
+   dancer1.setParent(outer_follows);
+   dancer2.setParent(outer_leads);
 }
 tmanager.scheduleGroup(outer_follows)
 .scheduleGroup(outer_leads)
