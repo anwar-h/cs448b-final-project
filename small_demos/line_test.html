@@ -1,6 +1,6 @@
 <html>
 <head>
-	<title>Anwar's Orientation</title>
+	<title>Crazy Lines</title>
 	
 </head>
 <body>
@@ -21,7 +21,7 @@ var bottom1 = outercircle.positionAtAngle(new dancevis.Orientation(200, false));
 var outer = new dancevis.Group({
 					shape: outercircle,
 					startTime: dancevis.Time.now(),
-					endTime: new dancevis.Time({seconds:30}),
+					endTime: new dancevis.Time({seconds:20}),
 					speed: new dancevis.Speed({speed:70}),
 					position: outercircle.center,
 					orientation: new dancevis.Orientation(0)
@@ -108,16 +108,17 @@ var line2 = new dancevis.Group({
 					orientation: new dancevis.Orientation(-90, false)
 				});
 
+var line3Ori = dancevis.Orientation.positionsToOrientation(vertical_line.endPosition(), horizontal_line.startPosition());
 var connector = new dancevis.Shapes.Line(vertical_line.endPosition(),
 							vertical_line.endPosition().distance(horizontal_line.startPosition()),
-							dancevis.Orientation.positionsToOrientation(vertical_line.endPosition(), horizontal_line.startPosition()));
+							line3Ori);
 var line3 = new dancevis.Group({
 					shape: connector,
 					startTime: line1.startTime,
 					endTime: line1.endTime,
 					position: vertical_line.endPosition(),
 					speed: line1.speed,
-					orientation: new dancevis.Orientation(-90, false)
+					orientation: line3Ori
 				});
 
 
@@ -149,6 +150,14 @@ line2.addExitPoint({
 	name: "to_connector"
 });
 
+line3.addExitPoint({
+	startTime: dancevis.Time.now(),
+	endTime: line3.endTime,
+	position: line1.shape.startPosition(),
+	nextGroup: line1,
+	showOnScreen: true,
+	name: "line3_to_line1"
+});
 
 
 outer.setUpdateFunction("reverse", new dancevis.Time({seconds:5}), outer.endTime, function() {
@@ -162,11 +171,8 @@ outer.setUpdateFunction("short_stop",
 	});
 
 tmanager.annotateAt(new dancevis.Position(200,0))
-	.annotate("Notice the short stop here!",
-	new dancevis.Time({milliseconds:500}), new dancevis.Time({seconds:3.5}))
-	
-	.annotate("The red dancer is Billy <br />- he has red hair.",
-	new dancevis.Time({seconds:1}), new dancevis.Time({seconds:4}));
+	.annotate("<h1>Crazy Lines Demo!</h1>", null, null)
+
 
 line1.setOnChildAddition(function(child, index) {
 	var dancer = child.children[0];
@@ -252,6 +258,7 @@ dancer6.setOrientation(inner6.getOrientation());
 tmanager.scheduleGroup(outer)
 		.scheduleGroup(line1)
 		.scheduleGroup(line2)
+		.scheduleGroup(line3)
 		.timer(new dancevis.Position(0, 160))
 
 </script>
