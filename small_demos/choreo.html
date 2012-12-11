@@ -77,7 +77,7 @@ for(var i = 0; i < 6; i++){
 					parentGroup: outer,
 					orientation: new dancevis.Orientation(60 * i, false)
 				});
-	//couple.showShapeOnScreen(true);
+	couple.showShapeOnScreen(false);
 	couple.setUpdateFunction("pivot", new dancevis.Time({seconds:10}), new dancevis.Time({seconds:12}), function() {
 	    this.updateChildren = false;
 	});
@@ -109,7 +109,7 @@ var line1 = new dancevis.Group({
 					speed: new dancevis.Speed({speed:70}),
 					orientation: new dancevis.Orientation(0)
 				});
-//line1.showShapeOnScreen(true);
+line1.showShapeOnScreen(false);
 
 // Outer 
 outer.addExitPoint({
