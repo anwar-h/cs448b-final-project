@@ -23,7 +23,8 @@ var right1 = new dancevis.Group({
 					endTime: new dancevis.Time({seconds:40}),
 					speed: new dancevis.Speed({speed:70}),
 					position: outercircle.center.positionInDirection(outercircle.radius, new dancevis.Orientation(0, false)),
-					orientation: new dancevis.Orientation(0)
+					orientation: new dancevis.Orientation(0),
+					groupName: "right1"
 				});
 var right2 = new dancevis.Group({
 					shape: outercircle,
@@ -31,7 +32,8 @@ var right2 = new dancevis.Group({
 					endTime: new dancevis.Time({seconds:40}),
 					speed: new dancevis.Speed({speed:70}),
 					position: outercircle.center.positionInDirection(outercircle.radius, new dancevis.Orientation(0, false)),
-					orientation: new dancevis.Orientation(0)
+					orientation: new dancevis.Orientation(0),
+					groupName: "right2"
 				});
 
 var left1 = new dancevis.Group({
@@ -40,7 +42,8 @@ var left1 = new dancevis.Group({
 					endTime: right1.endTime,
 					speed: right1.speed,
 					position: outercircle.center.positionInDirection(outercircle.radius, new dancevis.Orientation(180, false)),
-					orientation: new dancevis.Orientation(0)
+					orientation: new dancevis.Orientation(0),
+					groupName: "left1"
 				});
 var left2 = new dancevis.Group({
 					shape: outercircle,
@@ -48,7 +51,8 @@ var left2 = new dancevis.Group({
 					endTime: right2.endTime,
 					speed: right2.speed,
 					position: outercircle.center.positionInDirection(outercircle.radius, new dancevis.Orientation(180, false)),
-					orientation: new dancevis.Orientation(0)
+					orientation: new dancevis.Orientation(0),
+					groupName: "left2"
 				});
 
 left1.shape.clockwise = true;
