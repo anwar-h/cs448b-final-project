@@ -43,8 +43,9 @@ dancevis.Util.defaultNum = function(value, defaultNumValue) {
 	}
 	return num;
 }
-dancevis.Util.floatsEqual = function(one, two) {
-	return Math.abs(one - two) < 0.000001;
+dancevis.Util.floatsEqual = function(one, two, err) {
+	err = err || 0.000001;
+	return Math.abs(one - two) < err;
 }
 dancevis.Util.counter = function(startValue, incrementStep) {
 	var count = dancevis.Util.defaultNum(startValue, 0);
@@ -109,7 +110,7 @@ dancevis.Error.log = function(err) {
 dancevis.Error.DanceVisError = function(message) {
 	var defaultMessage = "'An error has occured inside dancevis library'";
 	this.name = "DanceVisError";
-	this.message = "function "+arguments.callee.caller.name+"(): '"+message+"'" || defaultMessage;
+	this.message = "'"+message+"'" || defaultMessage;
 }
 dancevis.Error.DanceVisError.prototype = new Error();
 dancevis.Error.DanceVisError.prototype.constructor = dancevis.Error.DanceVisError;
@@ -143,7 +144,10 @@ dancevis.Position.screenOriginIs = function(left, top) {
 	}
 	dancevis.Position.screenOriginLeft = left;
 	dancevis.Position.screenOriginTop = top;
-	DrawBackground(left, top);
+	var xboxsize = 36;
+	var yboxsize = 36;
+	dancevis.Util.DrawBackground(left, top, xboxsize, yboxsize);
+	dancevis.Util.DrawScale(left, top, xboxsize, yboxsize);
 }
 dancevis.Position.screenToModelCoords = function(left, top) {
 	return new dancevis.Position(left - dancevis.Position.screenOriginLeft, -1 * (top - dancevis.Position.screenOriginTop));
@@ -164,7 +168,7 @@ dancevis.Position.prototype.positionInDirection = function(distance, angle) {
 dancevis.Position.prototype.equals = function(other) {
 	if (!other || other.__type != dancevis.Position.__type)
 		throw new dancevis.Error.DanceVisError("wrong type supplied");
-	return (other.x == this.x && other.y == this.y);
+	return (dancevis.Util.floatsEqual(other.x, this.x) && dancevis.Util.floatsEqual(other.y, this.y));
 }
 dancevis.Position.prototype.copy = function() {
 	return new dancevis.Position(this.x, this.y);
@@ -195,6 +199,18 @@ dancevis.Orientation = function(angle, isRadians) {
 		if (!isRadians) theta = dancevis.Orientation.degreesToRadians(theta);
 	}
 	this.angle = theta;
+
+	var twoPi = (2 * Math.PI);
+	var modAngle = theta % twoPi;
+
+	var a = theta;
+	if (modAngle == 0 && theta > 0) {
+		a = twoPi;
+	}
+	else {
+		a = modAngle;
+	}
+	this.angle = (a < 0) ? a + twoPi : a;
 }
 // Static Variables for class Orientation
 dancevis.Orientation.__type = "orientation";
@@ -204,6 +220,14 @@ dancevis.Orientation.radiansToDegrees = function(radians) {
 }
 dancevis.Orientation.degreesToRadians = function(degrees) {
 	return degrees * 2 * Math.PI / 360.0;
+}
+dancevis.Orientation.positionsToOrientation = function(pos1, pos2) {
+	var x = pos2.x - pos1.x;
+	var y = pos2.y - pos1.y;
+	var atan = Math.atan(y / x);
+
+	if (x < 0) atan += Math.PI;
+	return new dancevis.Orientation(atan);
 }
 // Methods for class Orientation
 dancevis.Orientation.prototype.inRadians = function() {
@@ -237,8 +261,14 @@ dancevis.Orientation.prototype.isBetween = function(angle1, angle2) {
 	if (!angle2 || angle2.__type != dancevis.Orientation.__type)
 		throw new dancevis.Error.DanceVisError("wrong type supplied");
 
-	console.log("STILL NEED TO DO THIS");
-	return true;
+	var me = this.angle;
+	var a1 = angle1.angle;
+	var a2 = angle2.angle;
+
+	var smaller = a1 < a2 ? a1 : a2;
+	var larger  = a1 > a2 ? a1 : a2;
+
+	return (me >= smaller && me <= larger);
 }
 dancevis.Orientation.prototype.toString = function() {
 	var numDecimal = 2;
@@ -295,6 +325,34 @@ dancevis.Time.prototype.inMinutes = function() {
 dancevis.Time.prototype.inHours = function() {
 	return this.milliseconds / (1000.0 * 60.0 * 60.0);
 }
+dancevis.Time.prototype.inTimeUnits = function() {
+	var millisecondsRemaining = this.milliseconds;
+	var millisecondsPerSecond = (1000.0);
+	var millisecondsPerMinute = (millisecondsPerSecond * 60.0);
+
+
+	var minutes = 0,
+		seconds = 0,
+		milliseconds = 0;
+
+	minutes = Math.floor(millisecondsRemaining / millisecondsPerMinute);
+	millisecondsRemaining -= minutes * millisecondsPerMinute;
+
+	if (millisecondsRemaining > 0) {
+		seconds = Math.floor(millisecondsRemaining / millisecondsPerSecond)
+		millisecondsRemaining -= seconds * millisecondsPerSecond;
+	}
+
+	if (millisecondsRemaining > 0) {
+		milliseconds = millisecondsRemaining;
+	}
+
+	return {
+		minutes: minutes,
+		seconds: seconds,
+		milliseconds: milliseconds
+	}
+}
 dancevis.Time.prototype.isBetween = function(time1, time2) {
 	var milli1 = time1.inMilliseconds();
 	var milli2 = time2.inMilliseconds();
@@ -330,12 +388,12 @@ dancevis.Speed.prototype.speed = function() {
 	return this.pixelsPerSecond;
 }
 dancevis.Speed.prototype.setSpeed = function(speedSet) {
-	speedSet = dancevis.Util.defaultTo(speedSet, {});
+	speedSet = dancevis.Util.defaultTo(speedSet, {speed:0});
 
 	// prevent divide by zero
 	speedSet.duration = dancevis.Util.defaultTo(speedSet.duration, new dancevis.Time({milliseconds:1}));
 
-	if (speedSet.speed) {
+	if (dancevis.Util.isNum(speedSet.speed)) {
 		this.pixelsPerSecond = speedSet.speed;
 	}
 	else if (speedSet.distance && speedSet.duration) {
@@ -495,6 +553,11 @@ dancevis.Shapes.Line.prototype.setPosition = function(position) {
 	}
 }
 dancevis.Shapes.Line.prototype.nextPositionAndOrientation = function(startPosition, startOrientation, dt, speed) {
+	if (!dt || dt.__type != dancevis.Time.__type ||
+		!speed || speed.__type != dancevis.Speed.__type) {
+		throw new dancevis.Error.DanceVisError("wrong type supplied");
+	}
+
 	var nextX = startPosition.x + (speed.speed()*dt.inSeconds())*this.angle.cos();
 	var nextY = startPosition.y + (speed.speed()*dt.inSeconds())*this.angle.sin();
 	
@@ -509,22 +572,24 @@ dancevis.Shapes.Line.prototype.length = function() {
 dancevis.Shapes.Line.prototype.angle = function() {
    return angle;
 }
-dancevis.Shapes.Line.prototype.distanceToLine = function() {
-     
-}
-
 dancevis.Shapes.Line.prototype.isOnShape = function(position, err) {
-	err = err || .001;
-   var endPoint = this.endPosition();
-   var a = (endPoint.y - this.start_position.y) / (endPoint.x - this.start_position.x);
-   var b = this.start_position.y - a * this.start_position.x;
-   if ( Math.abs(position.y - (a*position.x+b)) < err){
-	  return true;
-      if(position.x >= this.start_position.x && position.x <= endPoint.x){
-	       return true;
-	  }
-   }
-   return false;
+	err = err || .3;
+	
+	var endPoint = this.endPosition();
+	var dist = this.startPosition().distance(position);
+	if (dancevis.Util.floatsEqual(endPoint.x, this.start_position.x, 1)) {
+		return (dancevis.Util.floatsEqual(this.start_position.x, position.x, 1) && dist <= this.length);
+	}
+	else {
+		var a = (endPoint.y - this.start_position.y) / (endPoint.x - this.start_position.x);
+		var b = this.start_position.y - a * this.start_position.x;
+		if (dancevis.Util.floatsEqual(position.y - (a*position.x+b), 0, err)) { // lie on the line
+			if(dist <= this.length) {
+				return true;
+			}
+		}
+	}
+	return false;
 }
 dancevis.Shapes.Line.prototype.copy = function() {
 	return new dancevis.Shapes.Line(this.start_position.copy(), this.length, this.angle.copy());
@@ -565,6 +630,7 @@ dancevis.Shapes.Circle = function(center, radius, startAngle, stopAngle) {
 	this.radius = dancevis.Util.defaultNum(radius, 10);
 	startAngle = dancevis.Util.defaultTo(startAngle, new dancevis.Orientation(0));
 	stopAngle = dancevis.Util.defaultTo(stopAngle, new dancevis.Orientation(Math.PI *2));
+
 	if (center.__type != dancevis.Position.__type ||
 		startAngle.__type != dancevis.Orientation.__type ||
 		stopAngle.__type != dancevis.Orientation.__type) {
@@ -586,10 +652,6 @@ dancevis.Shapes.Circle.prototype.getOrientation = function() {
 	return this.orientation;
 }
 dancevis.Shapes.Circle.prototype.setOrientation = function(orientation) {
-	if (this.element && this.svgGroup) {
-		var screenPos = this.center.screenCoords();
-		//this.svgGroup.setAttribute("transform", "rotate("+orientation.inDegrees()+" "+screenPos.x+" "+screenPos.y+")");
-	}
 	this.orientation = orientation;
 }
 dancevis.Shapes.Circle.prototype.getPosition = function() {
@@ -604,16 +666,32 @@ dancevis.Shapes.Circle.prototype.setPosition = function(position) {
 	}
 }
 dancevis.Shapes.Circle.prototype.nextPositionAndOrientation = function(startPosition, startOrientation, dt, speed) {
-	if (!startPosition || startPosition.__type != dancevis.Position.__type ||
-		!dt || dt.__type != dancevis.Time.__type ||
+	if (startPosition === null) {
+		if (startOrientation === null)
+			throw new dancevis.Error.DanceVisError("either startPosition or startOrientation must be non-null");
+		startPosition = this.positionAtAngle(startOrientation);
+	}
+	if (startOrientation === null && startPosition === null) {
+		throw new dancevis.Error.DanceVisError("either startPosition or startOrientation must be non-null");
+	}
+	if (!dt || dt.__type != dancevis.Time.__type ||
 		!speed || speed.__type != dancevis.Speed.__type) {
 		throw new dancevis.Error.DanceVisError("wrong type supplied");
+	}
+
+	var positionAngle = this.angleFromPosition(startPosition);
+	if (!positionAngle.isBetween(this.startAngle, this.stopAngle)) {
+		return {
+			position: startPosition,
+			orientation: startOrientation
+		}
 	}
 
 	startOrientation = startOrientation || null;
 	var dist = dt.inSeconds() * speed.speed();
 	var radiansCovered = dist / this.radius;
 	var positionAngle = this.angleFromPosition(startPosition);
+
 	if (this.clockwise) {
 		var newAngle =  new dancevis.Orientation(positionAngle.inRadians() - radiansCovered);
 		var nextPos = this.center.positionInDirection(this.radius, newAngle);
@@ -638,13 +716,11 @@ dancevis.Shapes.Circle.prototype.positionAtAngle = function(angle) {
 dancevis.Shapes.Circle.prototype.angleFromPosition = function(position) {
 	if (!position || position.__type != dancevis.Position.__type)
 		throw new dancevis.Error.DanceVisError("wrong type supplied");
+
 	if (this.center.equals(position))
 		return new dancevis.Orientation(0);
-	var x = position.x - this.center.x;
-	var y = position.y - this.center.y;
-	var atan = Math.atan(y / x);
-	if (x < 0) atan += Math.PI;
-	return new dancevis.Orientation(atan);
+
+	return dancevis.Orientation.positionsToOrientation(this.center, position);
 }
 dancevis.Shapes.Circle.prototype.arcLength = function(angle) {
 	if (!angle || angle.__type != dancevis.Orientation.__type)
@@ -671,16 +747,13 @@ dancevis.Shapes.Circle.prototype.isOnShape = function(position, err) {
 	if (!position || position.__type != dancevis.Position.__type)
 		throw new dancevis.Error.DanceVisError("wrong type supplied");
 
-	err = err || 2;
+	err = err || 0.5;
 
 	var distFromCenter = this.center.distance(position);
-	if ((distFromCenter - this.radius) > err) {
+	if (Math.abs(distFromCenter - this.radius) > err) {
 		return false;
 	}
 	var positionAngle = this.angleFromPosition(position);
-	var stopIsBigger = this.startAngle.inRadians() < this.stopAngle.inRadians();
-	var big = stopIsBigger ? this.stopAngle : this.startAngle;
-	var small = stopIsBigger ? this.startAngle : this.stopAngle;
 	if (!positionAngle.isBetween(this.startAngle, this.stopAngle)) {
 		return false;
 	}
@@ -828,16 +901,15 @@ dancevis.Group = function(groupOptions) {
 	this.endTime = null;
 	this.lastTime = null;
 	this.active = false;
-	this.position = null;
-	this.orientation = null;
-	this.beginAction = null;
-	this.endAction = null;
+	this.onChildAddition = null;
+	this.onChildRemoval = null;
 	this.endCondition = null;
 	this.clientUpdateFunctions = null;
 	this.groupId = null;
 	this.updateChildren = true;
 	this.myChildrenUpdate = true;
 	this.exitPoints = {};
+	this.initialPlacementControl = null;
 
 	groupOptions = dancevis.Util.defaultTo(groupOptions, {});
 	if (!groupOptions.shape) 
@@ -852,8 +924,8 @@ dancevis.Group = function(groupOptions) {
 	if (!groupOptions.speed || groupOptions.speed.__type != dancevis.Speed.__type)
 		throw new dancevis.Error.DanceVisError("invalid parameters to construct a group");
 
-	if (!groupOptions.position || groupOptions.position.__type != dancevis.Position.__type) 
-		throw new dancevis.Error.DanceVisError("invalid parameters to construct a group");
+	//if (!groupOptions.position || groupOptions.position.__type != dancevis.Position.__type) 
+	//	throw new dancevis.Error.DanceVisError("invalid parameters to construct a group");
 	
 	if (!groupOptions.orientation || groupOptions.orientation.__type != dancevis.Orientation.__type) 
 		throw new dancevis.Error.DanceVisError("invalid parameters to construct a group");
@@ -875,7 +947,9 @@ dancevis.Group = function(groupOptions) {
 	this.endTime = groupOptions.endTime.copy();
 	this.lastTime = this.startTime.copy();
 
-	this.setPosition(groupOptions.position.copy());
+	if (groupOptions.position) this.setPosition(groupOptions.position.copy());
+	if (groupOptions.position === null) this.setPosition(new dancevis.Position(10000000000, 10000000000));
+
 	this.setOrientation(groupOptions.orientation.copy());
 
 	this.clientUpdateFunctions = {};
@@ -917,7 +991,6 @@ dancevis.Group.prototype.updateChildrenBasedOnMyShape = function(currentTime) {
 				var validTime = (ep.startTime === null && ep.endTime === null) || currentTime.isBetween(ep.startTime, ep.endTime);
 				var validDist = child.getPosition().distance(ep.position) <= 1;
 				if (validTime && validDist) {
-				    console.log(currentTime.inSeconds());
 					child.setParent(ep.nextGroup);
 				}
 			}
@@ -930,10 +1003,11 @@ dancevis.Group.prototype.updateChildrenBasedOnMyShape = function(currentTime) {
 
 			if (!isEnd) {
 				// calculate new child position based on shape
-				var update = this.shape.nextPositionAndOrientation(child.getPosition(), child.getOrientation(), dt, this.speed);
-				
-				// set child position to the new one
-				child.setMyPositionAndModifyChildren(update.position, update.orientation);
+				if (this.shape.isOnShape(child.getPosition())) { 
+					var update = this.shape.nextPositionAndOrientation(child.getPosition(), child.getOrientation(), dt, this.speed);
+					// set child position to the new one
+					child.setMyPositionAndModifyChildren(update.position, update.orientation);
+				}
 			}
 		}
 	}
@@ -949,22 +1023,23 @@ dancevis.Group.prototype.childrenTimeIs = function(currentTime) {
 	}
 }
 dancevis.Group.prototype.setMyPositionAndModifyChildren = function(newPosition, newOrientation) {
-	if (!newPosition || newPosition.__type != dancevis.Position.__type) {
+	if (!newPosition || newPosition.__type != dancevis.Position.__type)
 		throw new dancevis.Error.DanceVisError("newPosition is not of type position");
-	}
-	if (!newOrientation || newOrientation.__type != dancevis.Orientation.__type) {
+
+	if (!newOrientation || newOrientation.__type != dancevis.Orientation.__type)
 		throw new dancevis.Error.DanceVisError("newOrientation is not of type orientation");
-	}
+
 
 	var dx = newPosition.x - this.getPosition().x;
 	var dy = newPosition.y - this.getPosition().y;
-	var dtheta = newOrientation.inRadians() - this.getOrientation().inRadians();
+	var dtheta = new dancevis.Orientation(newOrientation.inRadians() - this.getOrientation().inRadians());
 
 	for (var i = 0; i < this.children.length; i++) {
 		var child = this.children[i];
 		var childPos = child.getPosition();
+		//var newChildPosition = new dancevis.Position(childPos.x + (dx * dtheta.cos()), childPos.y + (dy * dtheta.sin()));
 		var newChildPosition = new dancevis.Position(childPos.x + dx, childPos.y + dy);
-		var newChildOrientation = new dancevis.Orientation(child.getOrientation().inRadians() + dtheta);
+		var newChildOrientation = new dancevis.Orientation(child.getOrientation().inRadians() + dtheta.inRadians());
 
 		child.setMyPositionAndModifyChildren(newChildPosition, newChildOrientation);
 	}
@@ -975,6 +1050,10 @@ dancevis.Group.prototype.getOrientation = function() {
 	return this.shape.getOrientation();
 }
 dancevis.Group.prototype.setOrientation = function(orientation) {
+	if (this.parentGroup && this.parentGroup.shape.shapeTypeId == dancevis.Shapes.ShapeTypeId.CIRCLE) {
+		var newPos = this.parentGroup.shape.getPosition().positionInDirection(this.parentGroup.shape.radius, orientation);
+		this.setPosition(newPos);
+	}
 	this.shape.setOrientation(orientation);
 }
 dancevis.Group.prototype.getPosition = function() {
@@ -982,9 +1061,6 @@ dancevis.Group.prototype.getPosition = function() {
 }
 dancevis.Group.prototype.setPosition = function(position) {
 	this.shape.setPosition(position);
-}
-dancevis.Group.prototype.forwardChild = function(child, toGroup) {
-
 }
 dancevis.Group.prototype.timeIs = function(currentTime) {
 	if (!currentTime || currentTime.__type != dancevis.Time.__type) {
@@ -1011,21 +1087,32 @@ dancevis.Group.prototype.insertChild = function(child, index) {
 		throw new dancevis.Error.DanceVisError("child is neither a group nor a dancer");
 	}
 	index = dancevis.Util.defaultNum(index, this.children.length);
-	//this.shape.add
-	var update = this.shape.nextPositionAndOrientation(child.getPosition(), null, new dancevis.Time(), this.speed);
 
+	if (this.shape.__type == dancevis.Shapes.Circle.__type) {
+		var childPos = (child.getPosition() && this.shape.isOnShape(child.getPosition(), 2)) ? child.getPosition() : null;
+		var childOri = childPos === null ? child.getOrientation() : null;
+	}
+	else {
+		var childPos = child.getPosition();
+		var childOri = child.getOrientation();
+	}
+
+	var update = this.shape.nextPositionAndOrientation(childPos, childOri, new dancevis.Time(), this.speed);
 	child.setMyPositionAndModifyChildren(update.position, update.orientation);
-	
-	if (index >= this.children.length) this.children.push(child);
+
+	if (index >= this.children.length) {
+		this.children.push(child);
+		index = this.children.length - 1;
+	}
 	else this.children.splice(index, 0, child);
 	
-	if (this.beginAction) {
-		this.beginAction.call(this, child, index);
+	if (this.onChildAddition) {
+		this.onChildAddition.call(this, child, index);
 	}
 }
 dancevis.Group.prototype.removeChildById = function(groupId) {
 	for (var i = 0; i < this.children.length; i++) {
-		if (this.children[i].__type == dancevis.Group.__type && this.children[i].groupId == groupId) {
+		if (this.children[i].groupId == groupId) {
 			this.removeChildByIndex(i);
 			break;
 		}
@@ -1055,12 +1142,38 @@ dancevis.Group.prototype.addExitPoint = function(groupEPObj) {
 	if (!groupEPObj.nextGroup.shape.isOnShape(groupEPObj.position, 3))
 		throw new dancevis.Error.DanceVisError("exit position is not on the next group's shape");
 
-	if (groupEPObj.endTime.inMilliseconds() < groupEPObj.startTime.inMilliseconds())
+	if (groupEPObj.endTime && groupEPObj.endTime &&
+		groupEPObj.endTime.inMilliseconds() < groupEPObj.startTime.inMilliseconds())
 		throw new dancevis.Error.DanceVisError("endTime is earlier than startTime");
 
+	for (var name in this.exitPoints) {
+		if (name == groupEPObj.name) {
+			throw new dancevis.Error.DanceVisError("that name is already in use");
+		}
+	}
+
 	groupEPObj.element = null;
-	if (groupEPObj.showOnScreen)
+	if (groupEPObj.showOnScreen) {
 		groupEPObj.element = dancevis.Util.makeSVGCircle(groupEPObj.position.screenCoords(), 5, "blue", false);
+		groupEPObj.popup = null;
+		groupEPObj.element.onmouseover = function(evt) {
+			groupEPObj.popup = document.createElement("div");
+			var table = document.createElement("table");
+			var row1 = "<tr><th colspan='2'>Exit Point: '"+groupEPObj.name+"'</th></tr>";
+			var row2 = "<tr><td class='value'>"+groupEPObj.position.toString()+"</td><td class='label'>- Position</td></tr>";
+			var row3 = "<tr><td class='value'>"+dancevis.TimeManager.formatedTimeStr(groupEPObj.startTime)+"</td><td class='label'>- Start</td></tr>";
+			var row4 = "<tr><td class='value'>"+dancevis.TimeManager.formatedTimeStr(groupEPObj.endTime)+"</td><td class='label'>- End</td></tr>";
+			table.innerHTML = row1 + row2 + row3 + row4;
+			groupEPObj.popup.className = "popup";
+			groupEPObj.popup.style.left = (evt.pageX + 5) + "px";
+			groupEPObj.popup.style.top = (evt.pageY) + "px";
+			groupEPObj.popup.appendChild(table);
+			document.body.appendChild(groupEPObj.popup);
+		}
+		groupEPObj.element.onmouseout = function(evt) {
+			document.body.removeChild(groupEPObj.popup);
+		}
+	}
 
 	var name = groupEPObj.name || groupEPObj.position.toString();
 	this.exitPoints[name] = groupEPObj;
@@ -1072,9 +1185,9 @@ dancevis.Group.prototype.removeChildByIndex = function(index) {
 	if (index > this.children.length)
 		return;
 
-	var child = this.children.splice(index, 1);
-	if (this.endAction) {
-		this.endAction.call(this, child, index);
+	var child = this.children.splice(index, 1)[0];
+	if (this.onChildRemoval) {
+		this.onChildRemoval.call(this, child, index);
 	}
 }
 dancevis.Group.prototype.setOptions = function(options) {
@@ -1096,11 +1209,11 @@ dancevis.Group.prototype.setParent = function(parent) {
 	this.parentGroup = parent;
 	this.parentGroup.insertChild(this);
 }
-dancevis.Group.prototype.setBeginAction = function(func) {
-	this.beginAction = func;
+dancevis.Group.prototype.setOnChildAddition = function(func) {
+	this.onChildAddition = func;
 }
-dancevis.Group.prototype.setEndAction = function(func) {
-	this.endAction = func;
+dancevis.Group.prototype.setOnChildRemoval = function(func) {
+	this.onChildRemoval = func;
 }
 dancevis.Group.prototype.setEndCondition = function(func) {
 	this.endCondition = func;
@@ -1150,7 +1263,7 @@ dancevis.Dancer = function(dancerOptions) {
 	this.dancerShape = null;
 	this.dancerSize = null;
 	this.dancerName = null;
-	this.parent = null;
+	this.parentGroup = null;
 	this.dancerColor = null;
 	this.position = null;
 	this.orientation = null;
@@ -1161,7 +1274,7 @@ dancevis.Dancer = function(dancerOptions) {
 	this.dancerTypeId = dancevis.Util.defaultTo(dancerOptions.dancerTypeId, dancevis.DancerTypeId.FOLLOW);
 	this.dancerShape = dancevis.Util.defaultTo(dancerOptions.dancerShape, dancevis.DancerShape.CIRCLE);
 	this.dancerSize = dancevis.Util.defaultTo(dancerOptions.dancerSize, dancevis.DancerShapeSize.MEDIUM);
-	this.dancerName = dancevis.Util.defaultTo(dancerOptions.dancerName, "");
+	this.dancerName = dancevis.Util.defaultTo(dancerOptions.dancerName, "NO NAME");
 	this.dancerColor = dancevis.Util.defaultTo(dancerOptions.dancerColor, "black");
 	this.position = dancevis.Util.defaultTo(dancerOptions.position, new dancevis.Position(0,0));
 	this.orientation = dancevis.Util.defaultTo(dancerOptions.orientation, new dancevis.Orientation(0));
@@ -1173,6 +1286,10 @@ dancevis.Dancer = function(dancerOptions) {
 	if (this.dancerSize == dancevis.DancerShapeSize.SMALL) radius = 6;
 	else if (this.dancerSize == dancevis.DancerShapeSize.LARGE) radius = 10;
 	this.element = dancevis.Util.makeSVGCircle(this.position, radius, this.dancerColor, false);
+
+	var obj = this;
+	this.element.onmouseover = function(evt) { obj.onmouseover(evt); }
+	this.element.onmouseout = function(evt) { obj.onmouseout(evt); }
 }
 // Static Variables for class Dancer
 dancevis.Dancer.__type = "dancer";
@@ -1180,40 +1297,212 @@ dancevis.Dancer.__type = "dancer";
 dancevis.Dancer.__idUnique = dancevis.Util.counter(555, 1);
 
 // Methods for class Dancer
+dancevis.Dancer.prototype.onmouseover = function(evt) {
+	this.popup = document.createElement("div");
+	var table = document.createElement("table");
+	var row1 = "<tr><th colspan='2'>"+this.dancerName+"</th></tr>";
+	var row2 = "<tr><td class='value'>"+this.getPosition().toString()+"</td><td class='label'>- Position</td></tr>";
+	var row3 = "<tr><td class='value'>"+this.getOrientation().inDegrees().toFixed(2)+"</td><td class='label'>- Degrees</td></tr>";
+	table.innerHTML = row1 + row2 + row3;
+	this.popup.className = "popup";
+	this.popup.style.left = (evt.pageX + 5) + "px";
+	this.popup.style.top = (evt.pageY) + "px";
+	this.popup.appendChild(table);
+	document.body.appendChild(this.popup);
+}
+dancevis.Dancer.prototype.onmouseout = function(evt) {
+	document.body.removeChild(this.popup);
+}
 dancevis.Dancer.prototype.getPosition = function() {
 	return this.position;
 }
 dancevis.Dancer.prototype.setPosition = function(position) {
+	var screenPosition = position.screenCoords();
+	var elementType = this.element.tagName;
+	if (elementType == "circle") {
+		this.element.cx.baseVal.value = screenPosition.x;
+		this.element.cy.baseVal.value = screenPosition.y;
+	}
+	else if (elementType == "div") {
+		this.element.style.left = screenPosition.x;
+		this.element.style.top = screenPosition.y;
+	}
+
 	this.position = position;
 }
 dancevis.Dancer.prototype.getOrientation = function() {
 	return this.orientation;
 }
 dancevis.Dancer.prototype.setOrientation = function(orientation) {
+	if (this.parentGroup && this.parentGroup.shape.shapeTypeId == dancevis.Shapes.ShapeTypeId.CIRCLE) {
+		var newPos = this.parentGroup.shape.getPosition().positionInDirection(this.parentGroup.shape.radius, orientation);
+		this.setPosition(newPos);
+	}
 	this.orientation = orientation;
+}
+dancevis.Dancer.prototype.setParent = function(parent) {
+	if (!parent || parent.__type != dancevis.Group.__type) {
+		throw new dancevis.Error.DanceVisError("trying to set a parent that is not a group");
+	}
+	if (this.parentGroup) {
+		this.parentGroup.removeChildById(this.groupId);
+	}
+	this.parentGroup = parent;
+	this.parentGroup.insertChild(this);
 }
 dancevis.Dancer.prototype.updateChildrenBasedOnMyShape = function(currentTime) {
 	//do nothing
 }
 dancevis.Dancer.prototype.setMyPositionAndModifyChildren = function(position, newOrientation) {
-	this.position = position;
 	this.orientation = newOrientation;
-
-	position = position.screenCoords();
-	var elementType = this.element.tagName;
-	if (elementType == "circle") {
-		//console.log(this.element.tagName);
-		this.element.cx.baseVal.value = position.x;
-		this.element.cy.baseVal.value = position.y;
-	}
-	else if (elementType == "div") {
-		this.element.style.left = position.x;
-		this.element.style.top = position.y;
-	}
+	this.setPosition(position);
 }
 
 
-function DrawBackground(left, top){
+dancevis.TimeManager = function() {
+	this.numMillisecondsPerInterval = 10;
+	this.intervalId = null;
+	this.groups = [];
+	this.currentTime = null;
+	this.veryFirstTime = true;
+	this.reachedEnd = false;
+	this.timerDiv = null;
+	this.annotations = [];
+	this.annotationPosition = new dancevis.Position(400, 100);
+}
+// Static Methods for class TimeManager
+dancevis.TimeManager.formatedTimeStr = function(currentTime) {
+	var toLength = function(num, x) {
+		var str = num + "";
+		var len = str.length;
+		if (len >= x) return str;
+
+		str = "";
+		for (var i = 0; i < x - len; i++) str += "0";
+		return str + num;
+	}
+	var tunits = currentTime.inTimeUnits();
+	return toLength(tunits.minutes, 2) + ":" + toLength(tunits.seconds, 2) + ":" + toLength(Math.floor(tunits.milliseconds / 10), 2);	
+}
+// Methods for class TimeManager
+dancevis.TimeManager.prototype.timer = function(position) {
+	if (!this.timerDiv) {
+		this.timerDiv = document.createElement("div");
+		this.timerDiv.className = "timerDiv";
+		this.timerDiv.innerHTML = "00:00:00";
+		document.body.appendChild(this.timerDiv);
+	}
+	else this.timerDiv.parentNode.removeChild(this.timerDiv);
+
+	var screenCoords = position.screenCoords();
+	this.timerDiv.style.left = screenCoords.x - (this.timerDiv.offsetWidth / 2) + "px";
+	this.timerDiv.style.top = screenCoords.y - (this.timerDiv.offsetHeight / 2) + "px";
+	
+	return this;
+}
+dancevis.TimeManager.prototype.scheduleGroup = function(group) {
+	if (!group || group.__type != dancevis.Group.__type)
+		throw new dancevis.Error.DanceVisError("group is not of type group");
+
+	this.groups.push(group);
+	return this;
+}
+dancevis.TimeManager.prototype.annotateAt = function(position) {
+	if (!position || position.__type != dancevis.Position.__type)
+		throw new dancevis.Error.DanceVisError("invalid position for annotations");
+
+	this.annotationPosition = position;
+	return this;
+}
+dancevis.TimeManager.prototype.annotate = function(str, startTime, endTime) {
+	if (!startTime || startTime.__type != dancevis.Time.__type)
+		throw new dancevis.Error.DanceVisError("invalid startTime for annotation");
+
+	if (!endTime || endTime.__type != dancevis.Time.__type) 
+		throw new dancevis.Error.DanceVisError("invalid endTime for annotation");
+
+	if (!this.annotationDiv) {
+		this.annotationDiv = document.createElement("div");
+		this.annotationDiv.className = "annotationDiv";
+
+		var screenCoords = this.annotationPosition.screenCoords();
+		this.annotationDiv.style.left = screenCoords.x + "px";
+		this.annotationDiv.style.top = screenCoords.y + "px";
+		document.body.appendChild(this.annotationDiv);
+	}
+
+	var obj = {
+		annotation: str,
+		startTime: startTime,
+		endTime: endTime,
+		element: document.createElement("p"),
+		shown: false
+	}
+	obj.element.innerHTML = str;
+
+	this.annotations.push(obj);
+
+	return this;
+}
+dancevis.TimeManager.prototype.onTimeStep = function() {
+	var time = new dancevis.Time({milliseconds: (this.currentTime.inMilliseconds() + this.numMillisecondsPerInterval)});
+
+	var stopUpdate = true;
+	for (var i = 0; i < this.groups.length; i++) {
+		this.groups[i].timeIs(time);
+		if (time.isBetween(this.groups[i].startTime, this.groups[i].endTime))
+			stopUpdate = false;
+	}
+	for (var i = 0; i < this.annotations.length; i++) {
+		var obj = this.annotations[i];
+		var validTime = time.isBetween(this.annotations[i].startTime, this.annotations[i].endTime);
+		if (!obj.shown && validTime) {
+			this.annotationDiv.appendChild(obj.element);
+			obj.shown = true;
+		}
+		else if (obj.shown && !validTime) {
+			obj.element.parentNode.removeChild(obj.element);
+			obj.shown = false;
+			//this.annotations.splice(i, 1);
+		}
+	}
+
+	if (stopUpdate) {
+		this.reachedEnd = true;
+		this.pause();
+	}
+	else if (this.timerDiv) {
+		var frmtime = dancevis.TimeManager.formatedTimeStr(time);
+		this.timerDiv.innerHTML = frmtime;
+	}
+	this.currentTime = time;
+}
+
+dancevis.TimeManager.prototype.play = function() {
+	if (this.reachedEnd) return;
+
+	if (this.veryFirstTime) {
+		dancevis.Time.zeroTimeIsNow();
+		this.currentTime = dancevis.Time.now();
+		this.veryFirstTime = false;
+	}
+	
+	if (this.intervalId !== null) this.pause();
+
+	var obj = this;
+	this.intervalId = setInterval(function() { obj.onTimeStep(); }, this.numMillisecondsPerInterval);
+}
+dancevis.TimeManager.prototype.pause = function() {
+	clearInterval(this.intervalId);
+	this.intervalId = null;
+}
+dancevis.TimeManager.prototype.reset = function() {
+	window.location.reload();
+}
+
+
+
+dancevis.Util.DrawBackground = function(left, top, yboxsize, xboxsize){
 	var g = d3.select("g").append("g")
 				.attr("class", "lines")
 	var i = left, 
@@ -1225,7 +1514,6 @@ function DrawBackground(left, top){
 	var h = document.body.offsetHeight;
 
 	var color = "rgb(212,230,242)";
-	var boxsize = 36;
 
 	var originline = g.append("svg:line")
 		    .attr("x1", left)
@@ -1250,7 +1538,7 @@ function DrawBackground(left, top){
 		    .attr("y2", h)
 		    .style("stroke", color)
 			.style("stroke-width","0.75px");
-			i -= boxsize;
+			i -= xboxsize;
 	}
 	while(j > 0){
 		var myLine = g.append("svg:line")
@@ -1260,7 +1548,7 @@ function DrawBackground(left, top){
 		    .attr("y2", j)
 		    .style("stroke", color)
 			.style("stroke-width","0.75px");
-			j -= boxsize;
+			j -= yboxsize;
 	}
 	while(k < w){
 		var myLine = g.append("svg:line")
@@ -1270,7 +1558,8 @@ function DrawBackground(left, top){
 		    .attr("y2", h)
 		    .style("stroke", color)
 			.style("stroke-width","0.75px");
-			k += boxsize;
+			k += xboxsize;
+		
 	}
 
 	while(m < h){
@@ -1281,6 +1570,45 @@ function DrawBackground(left, top){
 		    .attr("y2", m)
 		    .style("stroke", color)
 			.style("stroke-width","0.75px");
-			m += boxsize;
+			m += yboxsize;
 	}
+
 }
+
+dancevis.Util.DrawScale = function(left, top, yboxsize, xboxsize){
+	var g = d3.select("g").append("g")
+				.attr("class", "lines");
+
+	var xscale = g.append("svg:line")
+		    .attr("x1", left - xboxsize * 14)
+		    .attr("y1", top + yboxsize * 6)
+		    .attr("x2", left - xboxsize * 13)
+		    .attr("y2", top + yboxsize * 6)
+		    .style("stroke", "grey")
+			.style("stroke-width","1px");
+
+	var yscale = g.append("svg:line")
+		    .attr("x1", left - xboxsize * 13)
+		    .attr("y1", top + yboxsize * 6)
+		    .attr("x2", left - xboxsize * 13)
+		    .attr("y2", top + yboxsize * 5)
+		    .style("stroke", "grey")
+			.style("stroke-width","1px");
+
+
+	var xlabel = g.append("text")
+		.attr("class", "scaletext")
+		.attr("x", left - xboxsize * 13.5)
+		.attr("y", top + yboxsize * 6)
+		.attr("text-anchor", "middle")
+		.text(xboxsize + " px");
+
+	var ylabel = g.append("text")
+		.attr("class", "scaletext")
+		.attr("x", left - xboxsize * 13)
+		.attr("y", top + yboxsize * 5.5)
+		.attr("text-anchor","end")
+		.text(yboxsize + " px");
+
+}
+

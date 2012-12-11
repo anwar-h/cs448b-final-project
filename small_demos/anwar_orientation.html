@@ -1,0 +1,287 @@
+<html>
+<head>
+	<title>Anwar's Orientation</title>
+	
+</head>
+<body>
+<script src="../dancevis.js"></script>
+<script type="text/javascript">
+
+// Setup
+dancevis.Position.screenOriginIs(400, 200);
+var origin = new dancevis.Position(0, 0)
+var tmanager = new dancevis.TimeManager();
+var outercircle = new dancevis.Shapes.Circle(origin, 100);
+var innercircle = new dancevis.Shapes.Circle(origin, 10);
+
+var bottom1 = outercircle.positionAtAngle(new dancevis.Orientation(200, false));
+
+
+// Outer group
+var outer = new dancevis.Group({
+					shape: new dancevis.Shapes.Circle(origin, 100, new dancevis.Orientation(0,false), new dancevis.Orientation(270,false)),
+					startTime: dancevis.Time.now(),
+					endTime: new dancevis.Time({seconds:30}),
+					speed: new dancevis.Speed({speed:70}),
+					position: outercircle.center,
+					orientation: new dancevis.Orientation(0)
+				});
+outer.showShapeOnScreen(true);
+
+outer.setOnChildAddition(function(child, index) {
+	if (child.getPosition()) return;
+
+	var pos = this.shape.positionAtAngle(new dancevis.Orientation(60*index, false));
+	var update = this.shape.nextPositionAndOrientation(pos, null, new dancevis.Time(), new dancevis.Speed());
+	child.setMyPositionAndModifyChildren(update.position, update.orientation);
+});
+
+// Outer2 group
+var outer2 = new dancevis.Group({
+					shape: outercircle,
+					startTime: new dancevis.Time.now(),
+					endTime: new dancevis.Time({seconds:30}),
+					speed: new dancevis.Speed({speed:70}),
+					position: bottom1,
+					orientation: new dancevis.Orientation(0)
+				});
+outer2.showShapeOnScreen(true);
+
+var phi = 60;
+// Inner1 group
+var inner1 = new dancevis.Group({
+					shape: innercircle,
+					startTime: dancevis.Time.now(),
+					endTime: new dancevis.Time({seconds:30}),
+					speed: new dancevis.Speed({speed:150}),
+					parentGroup: outer,
+					orientation: new dancevis.Orientation(phi*0, false)
+				});
+// Inner2 group
+var inner2 = new dancevis.Group({
+					shape: innercircle,
+					startTime: dancevis.Time.now(),
+					endTime: new dancevis.Time({seconds:30}),
+					speed: new dancevis.Speed({speed:150}),
+					parentGroup: outer,
+					orientation: new dancevis.Orientation(phi*1, false)
+				});
+// Inner3 group
+var inner3 = new dancevis.Group({
+					shape: innercircle,
+					startTime: dancevis.Time.now(),
+					endTime: new dancevis.Time({seconds:30}),
+					speed: new dancevis.Speed({speed:150}),
+					parentGroup: outer,
+					orientation: new dancevis.Orientation(phi*2, false)
+				});
+// Inner4 group
+var inner4 = new dancevis.Group({
+					shape: innercircle,
+					startTime: dancevis.Time.now(),
+					endTime: new dancevis.Time({seconds:30}),
+					speed: new dancevis.Speed({speed:150}),
+					parentGroup: outer,
+					orientation: new dancevis.Orientation(phi*3, false)
+				});
+// Inner5 group
+var inner5 = new dancevis.Group({
+					shape: innercircle,
+					startTime: dancevis.Time.now(),
+					endTime: new dancevis.Time({seconds:30}),
+					speed: new dancevis.Speed({speed:150}),
+					parentGroup: outer,
+					orientation: new dancevis.Orientation(phi*4, false)
+				});
+// Inner6 group
+var inner6 = new dancevis.Group({
+					shape: innercircle,
+					startTime: dancevis.Time.now(),
+					endTime: new dancevis.Time({seconds:30}),
+					speed: new dancevis.Speed({speed:150}),
+					parentGroup: outer,
+					orientation: new dancevis.Orientation(phi*5, false)
+				});
+
+// line1 group
+var line_start_pos = outercircle.positionAtAngle(new dancevis.Orientation(30, false));
+var horizontal_line = new dancevis.Shapes.Line(line_start_pos, 200, new dancevis.Orientation(0));
+var line1 = new dancevis.Group({
+					shape: horizontal_line,
+					startTime: new dancevis.Time.now(),
+					endTime: new dancevis.Time({seconds:10}),
+					position: horizontal_line.startPosition(),
+					speed: new dancevis.Speed({speed:70}),
+					orientation: new dancevis.Orientation(0)
+				});
+line1.showShapeOnScreen(true);
+
+// line2 group
+var vertical_line = new dancevis.Shapes.Line(new dancevis.Position(-150,140), 300, new dancevis.Orientation(-90, false));
+var line2 = new dancevis.Group({
+					shape: vertical_line,
+					startTime: new dancevis.Time({seconds:0}),
+					endTime: new dancevis.Time({seconds:8}),
+					position: vertical_line.startPosition(),
+					speed: new dancevis.Speed({speed:70}),
+					orientation: new dancevis.Orientation(-90)
+				});
+
+
+
+// Outer 
+outer.addExitPoint({
+	startTime: dancevis.Time.now(),
+	endTime: line1.endTime,
+	position: line1.shape.startPosition(),
+	nextGroup: line1,
+	showOnScreen: false,
+	name: "to_line1"
+});
+
+
+outer.addExitPoint({
+	startTime: null,
+	endTime: null,
+	position: outer2.shape.positionAtAngle(new dancevis.Orientation(320, false)),
+	nextGroup: outer2,
+	showOnScreen: false,
+	name: "to_outer2"
+});
+
+
+outer2.addExitPoint({
+	startTime: null,
+	endTime: null,
+	position: outer2.shape.positionAtAngle(new dancevis.Orientation(80, false)),
+	nextGroup: outer,
+	showOnScreen: false,
+	name: "to_outer"
+});
+
+
+outer.setUpdateFunction("reverse", new dancevis.Time({seconds:5}), outer.endTime, function() {
+	this.shape.clockwise = true;
+});
+outer.setUpdateFunction("short_stop",
+	new dancevis.Time({milliseconds:500}),
+	new dancevis.Time({seconds:1.5}),
+	function() {
+		this.updateChildren = false;
+	});
+
+tmanager.annotateAt(new dancevis.Position(200,0))
+	.annotate("Notice the short stop here!",
+	new dancevis.Time({milliseconds:500}), new dancevis.Time({seconds:3.5}))
+	
+	.annotate("The red dancer is Billy <br />- he has red hair.",
+	new dancevis.Time({seconds:1}), new dancevis.Time({seconds:4}));
+
+outer.setUpdateFunction("forever_stop",
+	null,
+	null,
+	function() {
+		//this.updateChildren = true;
+	});
+
+inner1.setUpdateFunction("forever_stop",
+	null,
+	null,
+	function() {
+		this.updateChildren = true;
+	});
+
+outer.setOnChildRemoval(function(child, index) {
+	var target1 = new dancevis.Orientation(0);
+	var target2 = new dancevis.Orientation(180, false);
+
+	//console.log(child);
+	//while(!child.children[0].getOrientation().equals(target1) && !child.children[0].getOrientation().equals(target2)) {
+	//	console.log(child.children[0].getOrientation().inDegrees());
+	//	child.updateChildrenBasedOnMyShape(dancevis.Time.now());
+	//}
+});
+line1.setEndCondition(function(child, index) {
+	var dist_between = this.shape.length / 4;
+	var endPos = this.shape.endPosition();
+	var startPos = this.shape.startPosition();
+
+	var dist_to_end = child.getPosition().distance(endPos);
+	var dist_to_start = child.getPosition().distance(startPos);
+
+	if (index == 0) {
+		return (dist_to_start >= this.shape.length);
+	}
+
+	var child_before_me = this.children[index -1];
+	var my_dist = child.getPosition().distance(child_before_me.getPosition());
+	if (my_dist <= dist_between) return true;
+
+	return false;
+});
+
+
+var dancerPhi = 30;
+var dancer1 = new dancevis.Dancer({
+	dancerColor: "steelblue",
+	//orientation: new dancevis.Orientation(dancerPhi, false)
+	orientation: inner1.getOrientation()
+});
+var dancer2 = new dancevis.Dancer({
+	dancerColor: "steelblue",
+	//orientation: new dancevis.Orientation(dancerPhi, false)
+	orientation: inner2.getOrientation()
+});
+var dancer3 = new dancevis.Dancer({
+	dancerColor: "steelblue",
+	//orientation: new dancevis.Orientation(dancerPhi, false)
+	orientation: inner3.getOrientation()
+});
+var dancer4 = new dancevis.Dancer({
+	dancerColor: "steelblue",
+	//orientation: new dancevis.Orientation(dancerPhi, false)
+	orientation: inner4.getOrientation()
+});
+var dancer5 = new dancevis.Dancer({
+	dancerColor: "steelblue",
+	//orientation: new dancevis.Orientation(dancerPhi, false)
+	orientation: inner5.getOrientation()
+});
+var dancer6 = new dancevis.Dancer({
+	dancerColor: "steelblue",
+	//orientation: new dancevis.Orientation(dancerPhi, false)
+	orientation: inner6.getOrientation()
+});
+var dancerWild = new dancevis.Dancer({
+	dancerColor: "red",
+	//orientation: new dancevis.Orientation(dancerPhi + 180, false),
+	orientation: new dancevis.Orientation(180 + inner2.getOrientation().inDegrees(), false) 
+});
+
+
+// 1, 3, 4, 5, 6 each get one dancer
+dancer1.setParent(inner1);
+dancer3.setParent(inner3);
+dancer4.setParent(inner4);
+dancer5.setParent(inner5);
+dancer6.setParent(inner6);
+
+
+//inner2 gets two dancers
+dancer2.setParent(inner2);
+dancerWild.setParent(inner2);
+
+tmanager.scheduleGroup(outer)
+		.scheduleGroup(outer2)
+		.scheduleGroup(line1)
+		.scheduleGroup(line2)
+		.timer(new dancevis.Position(0, 160))
+
+</script>
+<div class="buttons_container">
+	<button type="button" id="reset_button" onclick="tmanager.reset();">Reset</button>
+	<button type="button" id="pause_button" onclick="tmanager.pause();">Pause</button>
+	<button type="button" id="play_button" onclick="tmanager.play();">Play</button>
+</div>
+</body>
+</html>

@@ -3,16 +3,28 @@
 	<title>Anwar's Sample</title>
 </head>
 
+<<<<<<< HEAD:choreo.html
 <body style="margin: 0px; padding: 0px;">
 <script type="text/javascript" src="http://mbostock.github.com/d3/d3.js?1.27.2"></script>
 <script src="main.js"></script>
+
+<div class="buttons_container">
+		<button type="button" id="restart_button">Restart</button>
+        <button type="button" id="pause_button">Pause</button>
+        <button type="button" id="play_button">Play</button>
+</div>
+
+=======
+<body>
+<script src="../dancevis.js"></script>
+>>>>>>> 93e764343e74ddd298bac1522b9650143704b801:small_demos/choreo.html
 <script type="text/javascript">
 
 
 // Setup
 dancevis.Position.screenOriginIs(document.body.offsetWidth/2, document.body.offsetHeight/2);
 var origin = new dancevis.Position(0, 0);
-dancevis.Time.zeroTimeIsNow();
+var tmanager = new dancevis.TimeManager();
 
 var outercircle = new dancevis.Shapes.Circle(origin, 100);
 var innercircle = new dancevis.Shapes.Circle(origin, 10);
@@ -39,10 +51,9 @@ for(var i = 0; i < 6; i++){
 					shape: innercircle,
 					startTime: dancevis.Time.now(),
 					endTime: outer.endTime,
-					position: origin.positionInDirection(200, new dancevis.Orientation(60*i, false)),
 					speed: new dancevis.Speed({speed:50}),
 					parentGroup: outer,
-					orientation: new dancevis.Orientation(0)
+					orientation: new dancevis.Orientation(60 * i, false)
 				});
 	couple.showShapeOnScreen(false);
 	couple.setUpdateFunction("pivot", new dancevis.Time({seconds:10}), new dancevis.Time({seconds:12}), function() {
@@ -52,12 +63,14 @@ for(var i = 0; i < 6; i++){
 	var pos2 = couple.getPosition().positionInDirection(200, new dancevis.Orientation(60*i + 180, false));
 	
 	var dancer1 = new dancevis.Dancer({
-			position: pos1,
+			//position: pos1,
+			orientation: new dancevis.Orientation(60*i, false),
 			dancerColor: "red",
 			dancerSize: dancevis.DancerShapeSize.LARGE
     });
     var dancer2 = new dancevis.Dancer({
-	       position: pos2,
+	       //position: pos2,
+	       orientation: new dancevis.Orientation(60*i + 180, false),
 	       dancerColor: "steelBlue",
 		   dancerSize: dancevis.DancerShapeSize.LARGE
    });
@@ -107,34 +120,17 @@ line1.setEndCondition(function(child, index) {
 	return false;
 });
 
-var nMili = 10;
-var interval = setInterval(function() {
-	var time = dancevis.Time.now();
-	outer.timeIs(time);
-	var sec = time.inSeconds();
-	
-	/*if (sec > 3 && sec < 5) {
-		inner1.setParent(outer2);
-		inner2.setParent(outer2);
-	}
-	else if (sec >5) {
-		inner1.setParent(outer);
-	}
-	*/
+tmanager.scheduleGroup(outer)
+		.scheduleGroup(line1)
+		.timer(new dancevis.Position(0, 160))
 
-	//console.log("\n");
-	//console.log(inner4.getOrientation());
-	//console.log(inner5.getOrientation());
-	//console.log(inner6.getOrientation());
-
-	line1.timeIs(time);
-}, nMili);
-
-
-setTimeout(function() {
-	clearInterval(interval);
-}, 30000);
 
 </script>
+<div class="buttons_container">
+	<button type="button" id="reset_button" onclick="tmanager.reset();">Reset</button>
+	<button type="button" id="pause_button" onclick="tmanager.pause();">Pause</button>
+	<button type="button" id="play_button" onclick="tmanager.play();">Play</button>
+</div>
+
 </body>
 </html>
