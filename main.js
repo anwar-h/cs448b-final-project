@@ -592,12 +592,12 @@ dancevis.Shapes.Line.prototype.angle = function() {
    return angle;
 }
 dancevis.Shapes.Line.prototype.isOnShape = function(position, err) {
-	err = err || 1;
+	err = err || 3;
 	
 	var endPoint = this.endPosition();
 	var dist = this.startPosition().distance(position);
 	if (dancevis.Util.floatsEqual(endPoint.x, this.start_position.x, 1)) {
-		return (dancevis.Util.floatsEqual(this.start_position.x, position.x, 1) && dist <= this.length);
+		return (dancevis.Util.floatsEqual(this.start_position.x, position.x, 3) && dist <= this.length);
 	}
 	else {
 		var a = (endPoint.y - this.start_position.y) / (endPoint.x - this.start_position.x);
