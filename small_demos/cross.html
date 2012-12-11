@@ -76,7 +76,7 @@ for(var i = 0; i < 16; i++){
    dancer2.setParent(couple);
 }
 tmanager.scheduleGroup(outer)
-.timer(new dancevis.Position(-400, 160))
+.timer(new dancevis.Position(0, 190))
 // lines group
 
 for(var j = 0; j < 4; j++){
@@ -142,9 +142,11 @@ for(var j = 0; j < 4; j++){
 
 </script>
 <div class="buttons_container">
-	<button type="button" id="reset_button" onclick="tmanager.reset();">Reset</button>
-	<button type="button" id="pause_button" onclick="tmanager.pause();">Pause</button>
-	<button type="button" id="play_button" onclick="tmanager.play();">Play</button>
+	<div class="inner_buttons_container">
+		<button type="button" id="reset_button" onclick="tmanager.reset();">Reset</button>
+		<button type="button" id="pause_button" onclick="tmanager.pause();">Pause</button>
+		<button type="button" id="play_button" onclick="tmanager.play();">Play</button>
+	</div>
 </div>
 
 </body>

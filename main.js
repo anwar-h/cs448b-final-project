@@ -10,16 +10,20 @@
 	document.body.onkeypress = (function() {
 		var playing = false;
 		return function(evt) {
-			if (evt.keyCode != 32) return;
-			var playBtn = document.getElementById("play_button");
-			var pauseBtn = document.getElementById("pause_button");
-			if (playing) {
-				playing = false;
-				pauseBtn.onclick();
+			if (evt.keyCode == 114 || evt.keyCode == 82) {
+				window.location.reload();
 			}
-			else {
-				playing = true;
-				playBtn.onclick();
+			else if (evt.keyCode == 32) {
+				var playBtn = document.getElementById("play_button");
+				var pauseBtn = document.getElementById("pause_button");
+				if (playing) {
+					playing = false;
+					pauseBtn.onclick();
+				}
+				else {
+					playing = true;
+					playBtn.onclick();
+				}
 			}
 		}
 	})();
@@ -1710,14 +1714,14 @@ dancevis.Util.DrawScale = function(left, top, yboxsize, xboxsize){
 	var xlabel = g.append("text")
 		.attr("class", "scaletext")
 		.attr("x", left - xboxsize * (nCols - 0.5))
-		.attr("y", top + yboxsize * nRows)
+		.attr("y", top + yboxsize * (nRows-0.1))
 		.attr("text-anchor", "middle")
 		.text(xboxsize + " px");
 
 	var ylabel = g.append("text")
 		.attr("class", "scaletext")
-		.attr("x", left - xboxsize * (nCols -1))
-		.attr("y", top + yboxsize * (nRows - 0.5))
+		.attr("x", left - xboxsize * (nCols -0.9))
+		.attr("y", top + yboxsize * (nRows - 0.6))
 		.attr("text-anchor","end")
 		.text(yboxsize + " px");
 
