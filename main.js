@@ -1667,34 +1667,36 @@ dancevis.Util.DrawScale = function(left, top, yboxsize, xboxsize){
 	var g = d3.select("g").append("g")
 				.attr("class", "lines");
 
+	var nRows = Math.floor(document.body.offsetHeight / yboxsize / 2);
+	var nCols = Math.floor(document.body.offsetWidth / xboxsize / 2) * -1 + 2;
 	var xscale = g.append("svg:line")
-		    .attr("x1", left - xboxsize * 14)
-		    .attr("y1", top + yboxsize * 6)
-		    .attr("x2", left - xboxsize * 13)
-		    .attr("y2", top + yboxsize * 6)
+		    .attr("x1", left - xboxsize * nCols)
+		    .attr("y1", top + yboxsize * nRows)
+		    .attr("x2", left - xboxsize * (nCols -1))
+		    .attr("y2", top + yboxsize * nRows)
 		    .style("stroke", "grey")
 			.style("stroke-width","1px");
 
 	var yscale = g.append("svg:line")
-		    .attr("x1", left - xboxsize * 13)
-		    .attr("y1", top + yboxsize * 6)
-		    .attr("x2", left - xboxsize * 13)
-		    .attr("y2", top + yboxsize * 5)
+		    .attr("x1", left - xboxsize * (nCols - 1))
+		    .attr("y1", top + yboxsize * nRows)
+		    .attr("x2", left - xboxsize * (nCols - 1))
+		    .attr("y2", top + yboxsize * (nRows -1))
 		    .style("stroke", "grey")
 			.style("stroke-width","1px");
 
 
 	var xlabel = g.append("text")
 		.attr("class", "scaletext")
-		.attr("x", left - xboxsize * 13.5)
-		.attr("y", top + yboxsize * 6)
+		.attr("x", left - xboxsize * (nCols - 0.5))
+		.attr("y", top + yboxsize * nRows)
 		.attr("text-anchor", "middle")
 		.text(xboxsize + " px");
 
 	var ylabel = g.append("text")
 		.attr("class", "scaletext")
-		.attr("x", left - xboxsize * 13)
-		.attr("y", top + yboxsize * 5.5)
+		.attr("x", left - xboxsize * (nCols -1))
+		.attr("y", top + yboxsize * (nRows - 0.5))
 		.attr("text-anchor","end")
 		.text(yboxsize + " px");
 
