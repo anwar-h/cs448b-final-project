@@ -6,6 +6,25 @@
 		.attr("width", w)
 		.attr("height", h)
 		.append("svg:g")
+
+	document.body.onkeypress = (function() {
+		var playing = false;
+		return function(evt) {
+			if (evt.keyCode != 32) return;
+			var playBtn = document.getElementById("play_button");
+			var pauseBtn = document.getElementById("pause_button");
+			if (playing) {
+				playing = false;
+				pauseBtn.onclick();
+			}
+			else {
+				playing = true;
+				playBtn.onclick();
+			}
+		}
+	})();
+
+	//document.body.onkeypress = function(evt) { console.log(evt.keyCode); }
 })();
 
 
@@ -573,12 +592,12 @@ dancevis.Shapes.Line.prototype.angle = function() {
    return angle;
 }
 dancevis.Shapes.Line.prototype.isOnShape = function(position, err) {
-	err = err || 1;
+	err = err || 3;
 	
 	var endPoint = this.endPosition();
 	var dist = this.startPosition().distance(position);
 	if (dancevis.Util.floatsEqual(endPoint.x, this.start_position.x, 1)) {
-		return (dancevis.Util.floatsEqual(this.start_position.x, position.x, 1) && dist <= this.length);
+		return (dancevis.Util.floatsEqual(this.start_position.x, position.x, 3) && dist <= this.length);
 	}
 	else {
 		var a = (endPoint.y - this.start_position.y) / (endPoint.x - this.start_position.x);
@@ -1008,9 +1027,9 @@ dancevis.Group.prototype.updateChildrenBasedOnMyShape = function(currentTime) {
 			 //  console.log(epObjName);
 				var ep = this.exitPoints[epObjName];
 				var validTime = (ep.startTime === null && ep.endTime === null) || currentTime.isBetween(ep.startTime, ep.endTime);
-				var validDist = child.getPosition().distance(ep.position) <= 1;
-			  //  var a = child.getPosition().distance(ep.position);
-				//console.log("pos: " + ep.position.x+ " " +ep.position.y);
+
+				var validDist = child.getPosition().distance(ep.position) <= 3;
+
 				if (validTime && validDist) {
 					//console.log(epObjName + " " + this.groupName + "=>" + ep.nextGroup.groupName);
 					child.setParent(ep.nextGroup);
@@ -1158,10 +1177,10 @@ dancevis.Group.prototype.addExitPoint = function(groupEPObj) {
 		if (!groupEPObj.endTime || groupEPObj.endTime.__type != dancevis.Time.__type) 
 			throw new dancevis.Error.DanceVisError("endTime is not of type time");		
 	}
-	if (!this.shape.isOnShape(groupEPObj.position, 1))
+	if (!this.shape.isOnShape(groupEPObj.position, 3))
 		throw new dancevis.Error.DanceVisError("position is not on the this group's shape");
 
-	if (!groupEPObj.nextGroup.shape.isOnShape(groupEPObj.position, 1))
+	if (!groupEPObj.nextGroup.shape.isOnShape(groupEPObj.position, 3))
 		throw new dancevis.Error.DanceVisError("exit position is not on the next group's shape");
 
 	if (groupEPObj.endTime && groupEPObj.endTime &&
@@ -1670,34 +1689,36 @@ dancevis.Util.DrawScale = function(left, top, yboxsize, xboxsize){
 	var g = d3.select("g").append("g")
 				.attr("class", "lines");
 
+	var nRows = Math.floor(document.body.offsetHeight / yboxsize / 2);
+	var nCols = Math.floor(document.body.offsetWidth / xboxsize / 2) * -1 + 2;
 	var xscale = g.append("svg:line")
-		    .attr("x1", left - xboxsize * 14)
-		    .attr("y1", top + yboxsize * 6)
-		    .attr("x2", left - xboxsize * 13)
-		    .attr("y2", top + yboxsize * 6)
+		    .attr("x1", left - xboxsize * nCols)
+		    .attr("y1", top + yboxsize * nRows)
+		    .attr("x2", left - xboxsize * (nCols -1))
+		    .attr("y2", top + yboxsize * nRows)
 		    .style("stroke", "grey")
 			.style("stroke-width","1px");
 
 	var yscale = g.append("svg:line")
-		    .attr("x1", left - xboxsize * 13)
-		    .attr("y1", top + yboxsize * 6)
-		    .attr("x2", left - xboxsize * 13)
-		    .attr("y2", top + yboxsize * 5)
+		    .attr("x1", left - xboxsize * (nCols - 1))
+		    .attr("y1", top + yboxsize * nRows)
+		    .attr("x2", left - xboxsize * (nCols - 1))
+		    .attr("y2", top + yboxsize * (nRows -1))
 		    .style("stroke", "grey")
 			.style("stroke-width","1px");
 
 
 	var xlabel = g.append("text")
 		.attr("class", "scaletext")
-		.attr("x", left - xboxsize * 13.5)
-		.attr("y", top + yboxsize * 6)
+		.attr("x", left - xboxsize * (nCols - 0.5))
+		.attr("y", top + yboxsize * nRows)
 		.attr("text-anchor", "middle")
 		.text(xboxsize + " px");
 
 	var ylabel = g.append("text")
 		.attr("class", "scaletext")
-		.attr("x", left - xboxsize * 13)
-		.attr("y", top + yboxsize * 5.5)
+		.attr("x", left - xboxsize * (nCols -1))
+		.attr("y", top + yboxsize * (nRows - 0.5))
 		.attr("text-anchor","end")
 		.text(yboxsize + " px");
 

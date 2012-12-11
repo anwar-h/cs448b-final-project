@@ -60,12 +60,8 @@ left2.showShapeOnScreen(false);
 right2.showShapeOnScreen(false);
 
 tmanager.annotateAt(new dancevis.Position(-400,140))
-	.annotate("Notice the short stop here!",
-	new dancevis.Time({seconds:3}), new dancevis.Time({seconds:5.5}))
+	//.annotate("<h1>Figure Eight Demo!</h1>", null, null)
 	
-	.annotate("Now they separate <br /> bitches!!!!",
-	new dancevis.Time({seconds:5}), new dancevis.Time({seconds:7}));
-
 
 for(var i = 0; i < 6; i++){
 	
@@ -83,11 +79,13 @@ for(var i = 0; i < 6; i++){
 	var dancer1 = new dancevis.Dancer({
 			orientation: new dancevis.Orientation(dancerDegree, false),
 			dancerColor: "red",
+			dancerName: "Nancy",
 			dancerSize: dancevis.DancerShapeSize.LARGE
 	});
 	var dancer2 = new dancevis.Dancer({
 	       orientation: new dancevis.Orientation(dancerDegree + 180, false),
 	       dancerColor: "steelBlue",
+	       dancerName: "Bill",
 		   dancerSize: dancevis.DancerShapeSize.LARGE
 	});
 

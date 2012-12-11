@@ -48,8 +48,8 @@ var vline2 = new dancevis.Group({
 					speed: new dancevis.Speed({speed:-70}),
 					orientation: new dancevis.Orientation(90, false)
 				});
-vline.showShapeOnScreen(false);
-vline2.showShapeOnScreen(false);
+//vline.showShapeOnScreen(false);
+//vline2.showShapeOnScreen(false);
 for(var i = 0; i < 4; i++){
      var line = new dancevis.Group({
 					shape: horizontal_line,
@@ -59,7 +59,7 @@ for(var i = 0; i < 4; i++){
 					speed: new dancevis.Speed({speed:70}),
 					orientation: new dancevis.Orientation(0)
 				});
-	line.showShapeOnScreen(false);
+	//line.showShapeOnScreen(false);
 
 	line.setEndCondition(function(child, index) {
 		var dist_between = this.shape.length / 4;
@@ -87,7 +87,7 @@ for(var i = 0; i < 4; i++){
 		endTime: line.endTime,
 		position: new dancevis.Position(0, -150 + i*75),
 		nextGroup: vline,
-		showOnScreen: false,
+		showOnScreen: true,
 		name: name
 	});
     var couple = new dancevis.Group({
@@ -99,7 +99,7 @@ for(var i = 0; i < 4; i++){
 					parentGroup: line,
 					position: grid.positionAt(i, 0)
 				});
-	couple.showShapeOnScreen(false);
+	//couple.showShapeOnScreen(false);
 
 	
 	var dancer1 = new dancevis.Dancer({
@@ -131,7 +131,7 @@ for(var i = 0; i < 4; i++){
 					speed: new dancevis.Speed({speed:-70}),
 					orientation: new dancevis.Orientation(0)
 				});
-line2.showShapeOnScreen(false);
+//line2.showShapeOnScreen(false);
 
 
 line2.setEndCondition(function(child, index) {
@@ -160,7 +160,7 @@ line2.setEndCondition(function(child, index) {
 		endTime: line2.endTime,
 		position: new dancevis.Position(-75, -110 + i*75),
 		nextGroup: vline2,
-		showOnScreen: false,
+		showOnScreen: true,
 		name: name2
 	});
     var couple = new dancevis.Group({
