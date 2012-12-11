@@ -144,7 +144,10 @@ dancevis.Position.screenOriginIs = function(left, top) {
 	}
 	dancevis.Position.screenOriginLeft = left;
 	dancevis.Position.screenOriginTop = top;
-	DrawBackground(left, top);
+	var xboxsize = 36;
+	var yboxsize = 36;
+	dancevis.Util.DrawBackground(left, top, xboxsize, yboxsize);
+	dancevis.Util.DrawScale(left, top, xboxsize, yboxsize);
 }
 dancevis.Position.screenToModelCoords = function(left, top) {
 	return new dancevis.Position(left - dancevis.Position.screenOriginLeft, -1 * (top - dancevis.Position.screenOriginTop));
@@ -746,7 +749,7 @@ dancevis.Shapes.Circle.prototype.isOnShape = function(position, err) {
 	if (!position || position.__type != dancevis.Position.__type)
 		throw new dancevis.Error.DanceVisError("wrong type supplied");
 
-	err = err || 0.5;
+	err = err || 2;
 
 	var distFromCenter = this.center.distance(position);
 	if (Math.abs(distFromCenter - this.radius) > err) {
@@ -957,6 +960,7 @@ dancevis.Group = function(groupOptions) {
 
 	var parent = dancevis.Util.defaultTo(groupOptions.parentGroup, null);
 	if (parent) this.setParent(parent);
+
 	this.groupName = dancevis.Util.defaultTo(groupOptions.groupName, "");
 	dancevis.Group.groups.push(this);
 }
@@ -978,7 +982,7 @@ dancevis.Group.prototype.getGroupName = function() {
 	return this.groupName;
 }
 dancevis.Group.prototype.setGroupName = function(name) {
-	return this.groupName = name;
+	this.groupName = name;
 }
 dancevis.Group.prototype.updateChildrenBasedOnMyShape = function(currentTime) {
 	if (!currentTime || currentTime.__type != dancevis.Time.__type) {
@@ -1007,6 +1011,7 @@ dancevis.Group.prototype.updateChildrenBasedOnMyShape = function(currentTime) {
 				var validTime = (ep.startTime === null && ep.endTime === null) || currentTime.isBetween(ep.startTime, ep.endTime);
 				var validDist = child.getPosition().distance(ep.position) <= 1;
 				if (validTime && validDist) {
+					//console.log(epObjName + " " + this.groupName + "=>" + ep.nextGroup.groupName);
 					child.setParent(ep.nextGroup);
 				}
 			}
@@ -1152,10 +1157,10 @@ dancevis.Group.prototype.addExitPoint = function(groupEPObj) {
 		if (!groupEPObj.endTime || groupEPObj.endTime.__type != dancevis.Time.__type) 
 			throw new dancevis.Error.DanceVisError("endTime is not of type time");		
 	}
-	if (!this.shape.isOnShape(groupEPObj.position, 3))
+	if (!this.shape.isOnShape(groupEPObj.position, 1))
 		throw new dancevis.Error.DanceVisError("position is not on the this group's shape");
 
-	if (!groupEPObj.nextGroup.shape.isOnShape(groupEPObj.position, 3))
+	if (!groupEPObj.nextGroup.shape.isOnShape(groupEPObj.position, 1))
 		throw new dancevis.Error.DanceVisError("exit position is not on the next group's shape");
 
 	if (groupEPObj.endTime && groupEPObj.endTime &&
@@ -1587,7 +1592,7 @@ dancevis.TimeManager.prototype.reset = function() {
 
 
 
-function DrawBackground(left, top){
+dancevis.Util.DrawBackground = function(left, top, yboxsize, xboxsize){
 	var g = d3.select("g").append("g")
 				.attr("class", "lines")
 	var i = left, 
@@ -1599,7 +1604,6 @@ function DrawBackground(left, top){
 	var h = document.body.offsetHeight;
 
 	var color = "rgb(212,230,242)";
-	var boxsize = 36;
 
 	var originline = g.append("svg:line")
 		    .attr("x1", left)
@@ -1624,7 +1628,7 @@ function DrawBackground(left, top){
 		    .attr("y2", h)
 		    .style("stroke", color)
 			.style("stroke-width","0.75px");
-			i -= boxsize;
+			i -= xboxsize;
 	}
 	while(j > 0){
 		var myLine = g.append("svg:line")
@@ -1634,7 +1638,7 @@ function DrawBackground(left, top){
 		    .attr("y2", j)
 		    .style("stroke", color)
 			.style("stroke-width","0.75px");
-			j -= boxsize;
+			j -= yboxsize;
 	}
 	while(k < w){
 		var myLine = g.append("svg:line")
@@ -1644,7 +1648,8 @@ function DrawBackground(left, top){
 		    .attr("y2", h)
 		    .style("stroke", color)
 			.style("stroke-width","0.75px");
-			k += boxsize;
+			k += xboxsize;
+		
 	}
 
 	while(m < h){
@@ -1655,6 +1660,45 @@ function DrawBackground(left, top){
 		    .attr("y2", m)
 		    .style("stroke", color)
 			.style("stroke-width","0.75px");
-			m += boxsize;
+			m += yboxsize;
 	}
+
 }
+
+dancevis.Util.DrawScale = function(left, top, yboxsize, xboxsize){
+	var g = d3.select("g").append("g")
+				.attr("class", "lines");
+
+	var xscale = g.append("svg:line")
+		    .attr("x1", left - xboxsize * 14)
+		    .attr("y1", top + yboxsize * 6)
+		    .attr("x2", left - xboxsize * 13)
+		    .attr("y2", top + yboxsize * 6)
+		    .style("stroke", "grey")
+			.style("stroke-width","1px");
+
+	var yscale = g.append("svg:line")
+		    .attr("x1", left - xboxsize * 13)
+		    .attr("y1", top + yboxsize * 6)
+		    .attr("x2", left - xboxsize * 13)
+		    .attr("y2", top + yboxsize * 5)
+		    .style("stroke", "grey")
+			.style("stroke-width","1px");
+
+
+	var xlabel = g.append("text")
+		.attr("class", "scaletext")
+		.attr("x", left - xboxsize * 13.5)
+		.attr("y", top + yboxsize * 6)
+		.attr("text-anchor", "middle")
+		.text(xboxsize + " px");
+
+	var ylabel = g.append("text")
+		.attr("class", "scaletext")
+		.attr("x", left - xboxsize * 13)
+		.attr("y", top + yboxsize * 5.5)
+		.attr("text-anchor","end")
+		.text(yboxsize + " px");
+
+}
+

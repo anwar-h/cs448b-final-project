@@ -76,3 +76,9 @@ body {
 	text-align: center;
 	position: absolute;
 }
+
+
+.scaletext{
+	font-size: 10px;
+	fill: grey;
+}
