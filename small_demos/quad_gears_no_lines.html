@@ -54,6 +54,11 @@ var TopLeft2 = new dancevis.Group({
 TopLeft1.shape.clockwise = true;
 TopLeft2.shape.clockwise = true;
 
+TopRight1.showShapeOnScreen(false);
+TopRight2.showShapeOnScreen(false);
+TopLeft1.showShapeOnScreen(false);
+TopLeft2.showShapeOnScreen(false);
+
 var brPos = outercircle.center.positionInDirection(outercircle.radius * Math.sqrt(2), new dancevis.Orientation(-45, false));
 var BotRight1 = new dancevis.Group({
 					shape: outercircle,
@@ -93,7 +98,10 @@ var BotLeft2 = new dancevis.Group({
 BotRight1.shape.clockwise = true;
 BotRight2.shape.clockwise = true;
 
-
+BotRight1.showShapeOnScreen(false);
+BotRight2.showShapeOnScreen(false);
+BotLeft1.showShapeOnScreen(false);
+BotLeft2.showShapeOnScreen(false);
 /*
 tmanager.annotateAt(new dancevis.Position(-450,140))
 	.annotate("Da dah da dah ... da dum..",
@@ -144,7 +152,10 @@ for(var i = 0; i < 4; i++){
 					position: null,
 					orientation: new dancevis.Orientation(dancerDegree + 45, false)
 				});
-
+    coupleTL1.showShapeOnScreen(false);
+	coupleTL2.showShapeOnScreen(false);
+	coupleTR1.showShapeOnScreen(false);
+	coupleTR2.showShapeOnScreen(false);
 	
 	var dancerTR1 = new dancevis.Dancer({
 			orientation: new dancevis.Orientation(60*i, false),
@@ -213,7 +224,10 @@ for(var i = 0; i < 4; i++){
 					orientation: new dancevis.Orientation(dancerDegree, false)
 				});
 
-	
+	coupleBL1.showShapeOnScreen(false);
+	coupleBL2.showShapeOnScreen(false);
+	coupleBR1.showShapeOnScreen(false);
+	coupleBR2.showShapeOnScreen(false);
 	var dancerBR1 = new dancevis.Dancer({
 			orientation: new dancevis.Orientation(60*i, false),
 			dancerColor: "red",
