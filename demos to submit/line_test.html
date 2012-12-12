@@ -1,0 +1,273 @@
+<html>
+<head>
+	<title>Crazy Lines</title>
+	
+</head>
+<body>
+<script src="../dancevis.js"></script>
+<script type="text/javascript">
+
+// Setup
+dancevis.Position.screenOriginIs(400, 200);
+var origin = new dancevis.Position(0, 0)
+var tmanager = new dancevis.TimeManager();
+var outercircle = new dancevis.Shapes.Circle(origin, 100);
+var innercircle = new dancevis.Shapes.Circle(origin, 10);
+
+var bottom1 = outercircle.positionAtAngle(new dancevis.Orientation(200, false));
+
+
+// Outer group
+var outer = new dancevis.Group({
+					shape: outercircle,
+					startTime: dancevis.Time.now(),
+					endTime: new dancevis.Time({seconds:20}),
+					speed: new dancevis.Speed({speed:70}),
+					position: outercircle.center,
+					orientation: new dancevis.Orientation(0)
+				});
+outer.showShapeOnScreen(true);
+
+
+var phi = 60;
+// Inner1 group
+var inner1 = new dancevis.Group({
+					shape: innercircle,
+					startTime: dancevis.Time.now(),
+					endTime: new dancevis.Time({seconds:30}),
+					speed: new dancevis.Speed({speed:150}),
+					parentGroup: outer,
+					orientation: new dancevis.Orientation(phi*0, false)
+				});
+// Inner2 group
+var inner2 = new dancevis.Group({
+					shape: innercircle,
+					startTime: dancevis.Time.now(),
+					endTime: new dancevis.Time({seconds:30}),
+					speed: new dancevis.Speed({speed:150}),
+					parentGroup: outer,
+					orientation: new dancevis.Orientation(phi*1, false)
+				});
+// Inner3 group
+var inner3 = new dancevis.Group({
+					shape: innercircle,
+					startTime: dancevis.Time.now(),
+					endTime: new dancevis.Time({seconds:30}),
+					speed: new dancevis.Speed({speed:150}),
+					parentGroup: outer,
+					orientation: new dancevis.Orientation(phi*2, false)
+				});
+// Inner4 group
+var inner4 = new dancevis.Group({
+					shape: innercircle,
+					startTime: dancevis.Time.now(),
+					endTime: new dancevis.Time({seconds:30}),
+					speed: new dancevis.Speed({speed:150}),
+					parentGroup: outer,
+					orientation: new dancevis.Orientation(phi*3, false)
+				});
+// Inner5 group
+var inner5 = new dancevis.Group({
+					shape: innercircle,
+					startTime: dancevis.Time.now(),
+					endTime: new dancevis.Time({seconds:30}),
+					speed: new dancevis.Speed({speed:150}),
+					parentGroup: outer,
+					orientation: new dancevis.Orientation(phi*4, false)
+				});
+// Inner6 group
+var inner6 = new dancevis.Group({
+					shape: innercircle,
+					startTime: dancevis.Time.now(),
+					endTime: new dancevis.Time({seconds:30}),
+					speed: new dancevis.Speed({speed:150}),
+					parentGroup: outer,
+					orientation: new dancevis.Orientation(phi*5, false)
+				});
+
+// line1 group
+var line_start_pos = outercircle.positionAtAngle(new dancevis.Orientation(30, false));
+var horizontal_line = new dancevis.Shapes.Line(line_start_pos, 200, new dancevis.Orientation(0));
+var line1 = new dancevis.Group({
+					shape: horizontal_line,
+					startTime: new dancevis.Time.now(),
+					endTime: new dancevis.Time({seconds:10}),
+					position: horizontal_line.startPosition(),
+					speed: new dancevis.Speed({speed:70}),
+					orientation: new dancevis.Orientation(0)
+				});
+
+// line2 group
+var vertical_line = new dancevis.Shapes.Line(new dancevis.Position(-100,140), 300, new dancevis.Orientation(270, false));
+var line2 = new dancevis.Group({
+					shape: vertical_line,
+					startTime: line1.startTime,
+					endTime: line1.endTime,
+					position: vertical_line.startPosition(),
+					speed: line1.speed,
+					orientation: new dancevis.Orientation(-90, false)
+				});
+
+var line3Ori = dancevis.Orientation.positionsToOrientation(vertical_line.endPosition(), horizontal_line.startPosition());
+var connector = new dancevis.Shapes.Line(vertical_line.endPosition(),
+							vertical_line.endPosition().distance(horizontal_line.startPosition()),
+							line3Ori);
+var line3 = new dancevis.Group({
+					shape: connector,
+					startTime: line1.startTime,
+					endTime: line1.endTime,
+					position: vertical_line.endPosition(),
+					speed: line1.speed,
+					orientation: line3Ori
+				});
+
+
+// Outer 
+outer.addExitPoint({
+	startTime: dancevis.Time.now(),
+	endTime: line1.endTime,
+	position: line1.shape.startPosition(),
+	nextGroup: line1,
+	showOnScreen: true,
+	name: "to_line1"
+});
+
+outer.addExitPoint({
+	startTime: dancevis.Time.now(),
+	endTime: line2.endTime,
+	position: new dancevis.Position(-100, 0),
+	nextGroup: line2,
+	showOnScreen: true,
+	name: "to_line2"
+});
+
+line2.addExitPoint({
+	startTime: dancevis.Time.now(),
+	endTime: line3.endTime,
+	position: connector.startPosition(),
+	nextGroup: line3,
+	showOnScreen: true,
+	name: "to_connector"
+});
+
+line3.addExitPoint({
+	startTime: dancevis.Time.now(),
+	endTime: line3.endTime,
+	position: line1.shape.startPosition(),
+	nextGroup: line1,
+	showOnScreen: true,
+	name: "line3_to_line1"
+});
+
+
+outer.setUpdateFunction("reverse", new dancevis.Time({seconds:5}), outer.endTime, function() {
+	this.shape.clockwise = true;
+});
+outer.setUpdateFunction("short_stop",
+	new dancevis.Time({milliseconds:500}),
+	new dancevis.Time({seconds:1.5}),
+	function() {
+		this.updateChildren = false;
+	});
+
+tmanager.annotateAt(new dancevis.Position(200,0))
+	.annotate("<h1>Crazy Lines Demo!</h1>", null, null)
+
+
+line1.setOnChildAddition(function(child, index) {
+	var dancer = child.children[0];
+	var angle = new dancevis.Orientation(30, false);
+	if (index > 0) {
+		var prevDancer = this.children[index -1].children[0];
+		angle = prevDancer.getOrientation();
+	}
+	dancer.setOrientation(angle);
+
+});
+
+line1.setEndCondition(function(child, index) {
+	var dist_between = this.shape.length / 4;
+	var endPos = this.shape.endPosition();
+	var startPos = this.shape.startPosition();
+
+	var dist_to_end = child.getPosition().distance(endPos);
+	var dist_to_start = child.getPosition().distance(startPos);
+
+	if (index == 0) {
+		return (dist_to_start >= this.shape.length);
+	}
+
+	var child_before_me = this.children[index -1];
+	var my_dist = child.getPosition().distance(child_before_me.getPosition());
+	if (my_dist <= dist_between) return true;
+
+	return false;
+});
+
+
+var dancerPhi = 30;
+var dancer1 = new dancevis.Dancer({
+	dancerColor: "steelblue",
+	//orientation: inner1.getOrientation()
+});
+var dancer2 = new dancevis.Dancer({
+	dancerColor: "steelblue",
+	//orientation: inner2.getOrientation()
+});
+var dancer3 = new dancevis.Dancer({
+	dancerColor: "steelblue",
+	//orientation: inner3.getOrientation()
+});
+var dancer4 = new dancevis.Dancer({
+	dancerColor: "steelblue",
+	//orientation: inner4.getOrientation()
+});
+var dancer5 = new dancevis.Dancer({
+	dancerColor: "steelblue",
+	//orientation: inner5.getOrientation()
+});
+var dancer6 = new dancevis.Dancer({
+	dancerColor: "steelblue",
+	//orientation: inner6.getOrientation()
+});
+var dancerWild = new dancevis.Dancer({
+	dancerColor: "red",
+	//orientation: new dancevis.Orientation(180 + inner2.getOrientation().inDegrees(), false) 
+});
+
+
+// 1, 3, 4, 5, 6 each get one dancer
+dancer1.setParent(inner1);
+dancer3.setParent(inner3);
+dancer4.setParent(inner4);
+dancer5.setParent(inner5);
+dancer6.setParent(inner6);
+
+//inner2 gets two dancers
+dancer2.setParent(inner2);
+dancerWild.setParent(inner2);
+
+dancer1.setOrientation(inner1.getOrientation());
+dancer2.setOrientation(inner2.getOrientation());
+dancerWild.setOrientation(new dancevis.Orientation(inner2.getOrientation().inDegrees() + 180, false));
+dancer3.setOrientation(inner3.getOrientation());
+dancer4.setOrientation(inner4.getOrientation());
+dancer5.setOrientation(inner5.getOrientation());
+dancer6.setOrientation(inner6.getOrientation());
+
+tmanager.scheduleGroup(outer)
+		.scheduleGroup(line1)
+		.scheduleGroup(line2)
+		.scheduleGroup(line3)
+		.timer(new dancevis.Position(0, 160))
+
+</script>
+<div class="buttons_container">
+	<div class="inner_buttons_container">
+		<button type="button" id="reset_button" onclick="tmanager.reset();">Reset</button>
+		<button type="button" id="pause_button" onclick="tmanager.pause();">Pause</button>
+		<button type="button" id="play_button" onclick="tmanager.play();">Play</button>
+	</div>
+</div>
+</body>
+</html>

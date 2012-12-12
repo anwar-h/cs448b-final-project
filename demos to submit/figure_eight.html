@@ -1,0 +1,246 @@
+<html>
+<head>
+	<title>Figure Eight</title>
+</head>
+
+<body>
+<script src="../dancevis.js"></script>
+<script type="text/javascript">
+
+
+// Setup
+dancevis.Position.screenOriginIs(document.body.offsetWidth/2, document.body.offsetHeight/2);
+var origin = new dancevis.Position(0, 0);
+var tmanager = new dancevis.TimeManager();
+
+var outercircle = new dancevis.Shapes.Circle(origin, 100);
+var innercircle = new dancevis.Shapes.Circle(origin, 10);
+
+// Outer group
+var right1 = new dancevis.Group({
+					shape: outercircle,
+					startTime: dancevis.Time.now(),
+					endTime: new dancevis.Time({seconds:40}),
+					speed: new dancevis.Speed({speed:70}),
+					position: outercircle.center.positionInDirection(outercircle.radius, new dancevis.Orientation(0, false)),
+					orientation: new dancevis.Orientation(0)
+				});
+var right2 = new dancevis.Group({
+					shape: outercircle,
+					startTime: dancevis.Time.now(),
+					endTime: new dancevis.Time({seconds:40}),
+					speed: new dancevis.Speed({speed:70}),
+					position: outercircle.center.positionInDirection(outercircle.radius, new dancevis.Orientation(0, false)),
+					orientation: new dancevis.Orientation(0)
+				});
+
+var left1 = new dancevis.Group({
+					shape: outercircle,
+					startTime: right1.startTime,
+					endTime: right1.endTime,
+					speed: right1.speed,
+					position: outercircle.center.positionInDirection(outercircle.radius, new dancevis.Orientation(180, false)),
+					orientation: new dancevis.Orientation(0)
+				});
+var left2 = new dancevis.Group({
+					shape: outercircle,
+					startTime: right2.startTime,
+					endTime: right2.endTime,
+					speed: right2.speed,
+					position: outercircle.center.positionInDirection(outercircle.radius, new dancevis.Orientation(180, false)),
+					orientation: new dancevis.Orientation(0)
+				});
+
+left1.shape.clockwise = true;
+left2.shape.clockwise = true;
+
+left1.showShapeOnScreen(false);
+right1.showShapeOnScreen(false);
+left2.showShapeOnScreen(false);
+right2.showShapeOnScreen(false);
+
+tmanager.annotateAt(new dancevis.Position(-400,140))
+	//.annotate("<h1>Figure Eight Demo!</h1>", null, null)
+	
+
+for(var i = 0; i < 6; i++){
+	
+	var dancerDegree = 30 * i;
+    var couple = new dancevis.Group({
+					shape: innercircle,
+					startTime: dancevis.Time.now(),
+					endTime: right1.endTime,
+					speed: new dancevis.Speed({speed:50}),
+					parentGroup: right1,
+					position: null,
+					orientation: new dancevis.Orientation(dancerDegree, false)
+				});
+
+	var dancer1 = new dancevis.Dancer({
+			orientation: new dancevis.Orientation(dancerDegree, false),
+			dancerColor: "red",
+			dancerName: "Nancy",
+			dancerSize: dancevis.DancerShapeSize.LARGE
+	});
+	var dancer2 = new dancevis.Dancer({
+	       orientation: new dancevis.Orientation(dancerDegree + 180, false),
+	       dancerColor: "steelBlue",
+	       dancerName: "Bill",
+		   dancerSize: dancevis.DancerShapeSize.LARGE
+	});
+
+	dancer1.setParent(couple);
+	dancer2.setParent(couple);
+
+
+	var couple2 = new dancevis.Group({
+					shape: innercircle,
+					startTime: dancevis.Time.now(),
+					endTime: right1.endTime,
+					speed: new dancevis.Speed({speed:50}),
+					parentGroup: left1,
+					position: null,
+					orientation: new dancevis.Orientation(-1 * dancerDegree, false)
+				});
+
+	var dancer21 = new dancevis.Dancer({
+			orientation: new dancevis.Orientation(-1 * dancerDegree +180, false),
+			dancerColor: "red",
+			dancerSize: dancevis.DancerShapeSize.LARGE
+	});
+	var dancer22 = new dancevis.Dancer({
+	       orientation: new dancevis.Orientation(-1 * dancerDegree, false),
+	       dancerColor: "steelBlue",
+		   dancerSize: dancevis.DancerShapeSize.LARGE
+	});
+
+	dancer21.setParent(couple2);
+	dancer22.setParent(couple2);
+
+/*
+	var dancerDegree = 90 * i + 45;
+    var coupleR1 = new dancevis.Group({
+					shape: innercircle,
+					startTime: dancevis.Time.now(),
+					endTime: right1.endTime,
+					speed: new dancevis.Speed({speed:50}),
+					parentGroup: right1,
+					position: null,
+					orientation: new dancevis.Orientation(dancerDegree, false)
+				});
+
+    var coupleR2 = new dancevis.Group({
+					shape: innercircle,
+					startTime: dancevis.Time.now(),
+					endTime: right2.endTime,
+					speed: new dancevis.Speed({speed:50}),
+					parentGroup: right2,
+					position: null,
+					orientation: new dancevis.Orientation(dancerDegree, false)
+				});
+	
+    var coupleL1 = new dancevis.Group({
+					shape: innercircle,
+					startTime: dancevis.Time.now(),
+					endTime: right1.endTime,
+					speed: new dancevis.Speed({speed:50}),
+					parentGroup: left1,
+					position: null,
+					orientation: new dancevis.Orientation(dancerDegree + 45, false)
+				});
+
+    var coupleL2 = new dancevis.Group({
+					shape: innercircle,
+					startTime: dancevis.Time.now(),
+					endTime: right2.endTime,
+					speed: new dancevis.Speed({speed:50}),
+					parentGroup: left2,
+					position: null,
+					orientation: new dancevis.Orientation(dancerDegree + 45, false)
+				});
+	
+	var dancerR1 = new dancevis.Dancer({
+			orientation: new dancevis.Orientation(60*i, false),
+			dancerColor: "red",
+			dancerSize: dancevis.DancerShapeSize.LARGE
+	});
+	var dancerR2 = new dancevis.Dancer({
+	       orientation: new dancevis.Orientation(60*i + 180, false),
+	       dancerColor: "steelBlue",
+		   dancerSize: dancevis.DancerShapeSize.LARGE
+	});
+	var dancerL1 = new dancevis.Dancer({
+			orientation: new dancevis.Orientation(60*i, false),
+			dancerColor: "red",
+			dancerSize: dancevis.DancerShapeSize.LARGE
+    });
+    var dancerL2 = new dancevis.Dancer({
+	       orientation: new dancevis.Orientation(60*i + 180, false),
+	       dancerColor: "steelBlue",
+		   dancerSize: dancevis.DancerShapeSize.LARGE
+   });
+
+	dancerR1.setParent(coupleR1);
+	dancerR2.setParent(coupleR2);
+	dancerL1.setParent(coupleL1);
+	dancerL2.setParent(coupleL2);
+	*/
+}
+
+// right1 to left1
+right1.addExitPoint({
+	startTime: dancevis.Time.now(),
+	endTime: right1.endTime,
+	position: new dancevis.Position(0, 0),
+	nextGroup: left1,
+	showOnScreen: true,
+	name: "right1_to_left1"
+});
+// left2 to right2
+left2.addExitPoint({
+	startTime: dancevis.Time.now(),
+	endTime: left2.endTime,
+	position: new dancevis.Position(0, 0),
+	nextGroup: right2,
+	showOnScreen: true,
+	name: "left2_to_right2"
+});
+
+// left1 to left2
+left1.addExitPoint({
+	startTime: dancevis.Time.now(),
+	endTime: right1.endTime,
+	position: new dancevis.Position(-200, 0),
+	nextGroup: left2,
+	showOnScreen: true,
+	name: "left1_to_left2"
+});
+// right2 to right1
+right2.addExitPoint({
+	startTime: dancevis.Time.now(),
+	endTime: left2.endTime,
+	position: new dancevis.Position(200, 0),
+	nextGroup: right1,
+	showOnScreen: true,
+	name: "right2_to_right1"
+});
+
+
+tmanager.scheduleGroup(right1)
+		.scheduleGroup(right2)
+		.scheduleGroup(left1)
+		.scheduleGroup(left2)
+		.timer(new dancevis.Position(0, 160))
+
+
+</script>
+<div class="buttons_container">
+	<div class="inner_buttons_container">
+		<button type="button" id="reset_button" onclick="tmanager.reset();">Reset</button>
+		<button type="button" id="pause_button" onclick="tmanager.pause();">Pause</button>
+		<button type="button" id="play_button" onclick="tmanager.play();">Play</button>
+	</div>
+</div>
+
+</body>
+</html>
